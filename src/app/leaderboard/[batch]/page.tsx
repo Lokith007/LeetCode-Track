@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { use, useState } from 'react';
 import { gql, useQuery } from '@apollo/client';
 import Leaderboard from '../../components/LeaderBoard/Leaderboard';
 import ContestLeaderboard from '../../components/LeaderBoard/ContestLeaderboard';
@@ -11,25 +11,16 @@ const GET_ALL_CONTESTS = gql`
   }
 `;
 
-type LeaderboardPageProps = {
-  params: {
-    batch: string;
-  };
-};
-
-const LeaderboardPage = ({ params }: LeaderboardPageProps) => {
-  const { batch } = params;
+const LeaderboardPage = ({ params }: { params: Promise<{ batch: string }> }) => {
+  const { batch } = use(params);
   const [view, setView] = useState<'dashboard' | 'contest'>('dashboard');
 
   const { data, loading, error } = useQuery(GET_ALL_CONTESTS, {
     variables: { batch },
   });
-  console.log(data , error);
-  
 
   return (
     <div className='p-4'>
-      {/* Toggle Buttons */}
       <div className='mb-4 flex gap-2'>
         <button
           onClick={() => setView('dashboard')}
@@ -49,7 +40,6 @@ const LeaderboardPage = ({ params }: LeaderboardPageProps) => {
         </button>
       </div>
 
-      {/* Conditional Render */}
       {view === 'dashboard' ? (
         <Leaderboard batch={batch} />
       ) : loading ? (

@@ -97,7 +97,9 @@ const ContestLeaderboard = ({ batch, contests }: ContestLeaderboardProps) => {
         <p>No data available.</p>
       ) : tab === 'attended' ? (
         <div className='space-y-2'>
-          {leaderboard.participants.map((p: any) => (
+          {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          leaderboard.participants.map((p: any) => (
             <div key={p.id} className='border p-3 rounded shadow'>
               <p><strong>Name:</strong> {p.name}</p>
               <p><strong>Username:</strong> {p.leetcodeUsername}</p>
@@ -110,7 +112,9 @@ const ContestLeaderboard = ({ batch, contests }: ContestLeaderboardProps) => {
         </div>
       ) : (
         <div className='space-y-2'>
-          {leaderboard.nonParticipants.map((np: any) => (
+          {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          leaderboard.nonParticipants.map((np: any) => (
             <div key={np.id} className='border p-3 rounded shadow'>
               <p><strong>Name:</strong> {np.name}</p>
               <p><strong>Username:</strong> {np.leetcodeUsername}</p>

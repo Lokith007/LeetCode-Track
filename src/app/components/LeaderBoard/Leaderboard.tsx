@@ -40,7 +40,9 @@ const Leaderboard = ({ batch }: LeaderboardProps) => {
     <div className="p-8">
       <h1 className="text-3xl font-bold mb-4">Leaderboard for {batch}</h1>
       <ul className="space-y-4">
-        {data.students.map((student: any) => (
+      
+        {// eslint-disable-next-line @typescript-eslint/no-explicit-any
+        data.students.map((student: any) => (
           <li key={student.id} className="bg-white p-4 rounded shadow">
             <h2 className="text-xl font-semibold">{student.name}</h2>
             <p className="text-gray-600">Roll No: {student.rollNumber}</p>
