@@ -20,12 +20,12 @@ const LeaderboardPage = ({ params }: { params: Promise<{ batch: string }> }) => 
   });
 
   return (
-    <div className='p-4'>
+    <div className='p-4 bg-black'>
       <div className='mb-4 flex gap-2'>
         <button
           onClick={() => setView('dashboard')}
           className={`px-4 py-2 rounded ${
-            view === 'dashboard' ? 'bg-blue-600 text-white' : 'bg-gray-200'
+            view === 'dashboard' ? 'bg-green-400 text-white' : 'bg-gray-200'
           }`}
         >
           Dashboard
@@ -33,7 +33,7 @@ const LeaderboardPage = ({ params }: { params: Promise<{ batch: string }> }) => 
         <button
           onClick={() => setView('contest')}
           className={`px-4 py-2 rounded ${
-            view === 'contest' ? 'bg-blue-600 text-white' : 'bg-gray-200'
+            view === 'contest' ? 'bg-green-400 text-white' : 'bg-gray-200'
           }`}
         >
           Contest

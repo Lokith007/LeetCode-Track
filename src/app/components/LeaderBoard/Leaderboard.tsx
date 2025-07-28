@@ -15,11 +15,6 @@ const GET_STUDENTS = gql`
       rating
       globalRanking
       topPercentage
-      attendedContestsCount
-      recentContests {
-        ranking
-        problemsSolved
-      }
     }
   }
 `;
@@ -33,32 +28,54 @@ const Leaderboard = ({ batch }: LeaderboardProps) => {
     variables: { batch },
   });
 
-  if (loading) return <p className="p-8">Loading...</p>;
-  if (error) return <p className="p-8 text-red-500">Error: {error.message}</p>;
+  if (loading)
+    return <p className="p-8 text-green-300 font-medium text-lg">Loading...</p>;
+
+  if (error)
+    return <p className="p-8 text-red-500 font-semibold">Error: {error.message}</p>;
 
   return (
-    <div className="p-8">
-      <h1 className="text-3xl font-bold mb-4">Leaderboard for {batch}</h1>
-      <ul className="space-y-4">
-      
-        {// eslint-disable-next-line @typescript-eslint/no-explicit-any
-        data.students.map((student: any) => (
-          <li key={student.id} className="bg-white p-4 rounded shadow">
-            <h2 className="text-xl font-semibold">{student.name}</h2>
-            <p className="text-gray-600">Roll No: {student.rollNumber}</p>
-            <p className="mt-2">Total Solved: {student?.totalSolved}</p>
-            <p>Easy: {student?.easySolved}</p>
-            <p>Medium: {student?.mediumSolved}</p>
-            <p>Hard: {student?.hardSolved}</p>
-            <p>Rating: {student?.rating}</p>
-            <p>GlobalRanking: {student?.globalRanking}</p>
-            <p>Percentage: {student?.topPercentage}</p>
-
-
-
-          </li>
-        ))}
-      </ul>
+    <div className="p-4 bg-black min-h-screen">
+      <h2 className="text-3xl font-bold text-green-400 mb-6">
+        Leaderboard - {batch}
+      </h2>
+      <div className="overflow-auto rounded-lg shadow-lg">
+        <table className="min-w-full text-sm text-left text-green-200 bg-gray-900 border border-green-600">
+          <thead className="text-xs uppercase bg-green-700 text-black">
+            <tr>
+              <th className="px-4 py-3">S.No</th>
+              <th className="px-4 py-3">Name</th>
+              <th className="px-4 py-3">Reg Number</th>
+              <th className="px-4 py-3">Total Solved</th>
+              <th className="px-4 py-3">Easy</th>
+              <th className="px-4 py-3">Medium</th>
+              <th className="px-4 py-3">Hard</th>
+              <th className="px-4 py-3">Rating</th>
+              <th className="px-4 py-3">Global Rank</th>
+              <th className="px-4 py-3">Top %</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.students.map((student: any, index: number) => (
+              <tr
+                key={student.id}
+                className="border-t border-green-800 hover:bg-green-800 hover:text-black transition-all duration-200"
+              >
+                <td className="px-4 py-3">{index + 1}</td>
+                <td className="px-4 py-3">{student.name}</td> {/* Changed here */}
+                <td className="px-4 py-3">{student.rollNumber}</td>
+                <td className="px-4 py-3">{student.totalSolved}</td>
+                <td className="px-4 py-3">{student.easySolved}</td>
+                <td className="px-4 py-3">{student.mediumSolved}</td>
+                <td className="px-4 py-3">{student.hardSolved}</td>
+                <td className="px-4 py-3">{student.rating}</td>
+                <td className="px-4 py-3">{student.globalRanking}</td>
+                <td className="px-4 py-3">{student.topPercentage}%</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
