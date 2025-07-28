@@ -50,7 +50,9 @@ const ContestLeaderboard = ({ batch, contests }: ContestLeaderboardProps) => {
 
   return (
     <div className="bg-black min-h-screen p-6 text-green-300">
-      <h2 className="text-3xl font-bold mb-6 text-green-400">Contest Leaderboard - {batch}</h2>
+      <h2 className="text-3xl font-bold mb-6 text-green-400">
+        Contest Leaderboard - {batch}
+      </h2>
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
         <select
@@ -95,52 +97,50 @@ const ContestLeaderboard = ({ batch, contests }: ContestLeaderboardProps) => {
         <p className="text-red-500">Error: {error.message}</p>
       ) : !leaderboard ? (
         <p>No data available.</p>
-      ) : tab === 'attended' ? (
-        <div className="grid gap-4">
-          {leaderboard.participants.map((p: any) => (
-            <div
-  key={p.id}
-  className="bg-gray-900 rounded-lg p-4 border border-green-700 shadow hover:bg-green-800 hover:text-black transition-all"
->
-  <p>
-    <span className="text-green-400 font-semibold">Name:</span>{' '}
-    <span className="text-green-200">{p.name}</span>
-  </p>
-  <p>
-    <span className="text-green-400 font-semibold">Username:</span>{' '}
-    <span className="text-green-200">{p.leetcodeUsername}</span>
-  </p>
-  <p>
-    <span className="text-green-400 font-semibold">Rating:</span>{' '}
-    <span className="text-green-200">{p.rating}</span>
-  </p>
-  <p>
-    <span className="text-green-400 font-semibold">Ranking:</span>{' '}
-    <span className="text-green-200">{p.contestRanking}</span>
-  </p>
-  <p>
-    <span className="text-green-400 font-semibold">Problems Solved:</span>{' '}
-    <span className="text-green-200">
-      {p.contest.problemsSolved}/{p.contest.totalProblems}
-    </span>
-  </p>
-  <p>
-    <span className="text-green-400 font-semibold">Trend:</span>{' '}
-    <span className="text-green-200">{p.contest.trendDirection}</span>
-  </p>
-</div>
-
-          ))}
-        </div>
       ) : (
-        <div className="grid gap-4">
-          {leaderboard.nonParticipants.map((np: any) => (
-            <div key={np.id} className="bg-gray-900 rounded-lg p-4 border border-green-700 shadow hover:bg-green-800 hover:text-black transition-all">
-              <p><span className="text-green-400 font-semibold">Name:</span> {np.name}</p>
-              <p><span className="text-green-400 font-semibold">Username:</span> {np.leetcodeUsername}</p>
-              <p><span className="text-green-400 font-semibold">Rating:</span> {np.rating}</p>
-            </div>
-          ))}
+        <div className="overflow-auto rounded-lg shadow-lg">
+          <table className="min-w-full text-sm text-left text-green-200 bg-gray-900 border border-green-600">
+            <thead className="text-xs uppercase bg-green-700 text-black">
+              <tr>
+                <th className="px-4 py-3">S.No</th>
+                <th className="px-4 py-3">Name</th>
+                <th className="px-4 py-3">Username</th>
+                <th className="px-4 py-3">Rating</th>
+                {tab === 'attended' && (
+                  <>
+                    <th className="px-4 py-3">Ranking</th>
+                    <th className="px-4 py-3">Problems Solved</th>
+                    <th className="px-4 py-3">Trend</th>
+                  </>
+                )}
+              </tr>
+            </thead>
+            <tbody>
+              {(tab === 'attended'
+                ? leaderboard.participants
+                : leaderboard.nonParticipants
+              ).map((user: any, index: number) => (
+                <tr
+                  key={user.id}
+                  className="border-t border-green-800 hover:bg-green-800 hover:text-black transition-all duration-200"
+                >
+                  <td className="px-4 py-3">{index + 1}</td>
+                  <td className="px-4 py-3">{user.name}</td>
+                  <td className="px-4 py-3">{user.leetcodeUsername}</td>
+                  <td className="px-4 py-3">{user.rating}</td>
+                  {tab === 'attended' && (
+                    <>
+                      <td className="px-4 py-3">{user.contestRanking}</td>
+                      <td className="px-4 py-3">
+                        {user.contest.problemsSolved}/{user.contest.totalProblems}
+                      </td>
+                      <td className="px-4 py-3">{user.contest.trendDirection}</td>
+                    </>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
