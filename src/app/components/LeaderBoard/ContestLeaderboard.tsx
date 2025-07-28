@@ -18,14 +18,9 @@ const GET_CONTEST_STATUS_LEADERBOARD = gql`
         rating
         contestRanking
         contest {
-          startTime
-          title
-          ranking
-          rating
           problemsSolved
           totalProblems
           trendDirection
-          finishTimeInSeconds
         }
       }
       nonParticipants {
@@ -49,8 +44,8 @@ const ContestLeaderboard = ({ batch, contests }: ContestLeaderboardProps) => {
   const leaderboard = data?.contestStatusLeaderboard;
 
   return (
-    <div className="bg-black min-h-screen p-6 text-green-300">
-      <h2 className="text-3xl font-bold mb-6 text-green-400">
+    <div className="bg-[#111111] min-h-screen p-6 text-gray-200">
+      <h2 className="text-3xl font-bold mb-6 text-[#f59e0b]">
         Contest Leaderboard - {batch}
       </h2>
 
@@ -58,7 +53,7 @@ const ContestLeaderboard = ({ batch, contests }: ContestLeaderboardProps) => {
         <select
           value={selectedContest}
           onChange={(e) => setSelectedContest(e.target.value)}
-          className="bg-green-900 text-green-200 px-4 py-2 rounded shadow border border-green-600"
+          className="bg-[#1f1f1f] text-[#f59e0b] px-4 py-2 rounded border border-[#f59e0b40] shadow"
         >
           {contests.map((contest) => (
             <option key={contest} value={contest}>
@@ -72,8 +67,8 @@ const ContestLeaderboard = ({ batch, contests }: ContestLeaderboardProps) => {
             onClick={() => setTab('attended')}
             className={`px-4 py-2 rounded border font-semibold transition ${
               tab === 'attended'
-                ? 'bg-green-600 text-black'
-                : 'bg-black text-green-300 border-green-700 hover:bg-green-800 hover:text-black'
+                ? 'bg-[#f59e0b] text-black'
+                : 'bg-[#1f1f1f] text-[#f59e0b] border-[#f59e0b] hover:bg-[#f59e0b90] hover:text-black'
             }`}
           >
             Attended
@@ -82,8 +77,8 @@ const ContestLeaderboard = ({ batch, contests }: ContestLeaderboardProps) => {
             onClick={() => setTab('notAttended')}
             className={`px-4 py-2 rounded border font-semibold transition ${
               tab === 'notAttended'
-                ? 'bg-green-600 text-black'
-                : 'bg-black text-green-300 border-green-700 hover:bg-green-800 hover:text-black'
+                ? 'bg-[#f59e0b] text-black'
+                : 'bg-[#1f1f1f] text-[#f59e0b] border-[#f59e0b] hover:bg-[#f59e0b90] hover:text-black'
             }`}
           >
             Not Attended
@@ -92,15 +87,15 @@ const ContestLeaderboard = ({ batch, contests }: ContestLeaderboardProps) => {
       </div>
 
       {loading ? (
-        <p className="text-green-400 text-lg font-medium">Loading leaderboard...</p>
+        <p className="text-[#f59e0b] text-lg font-medium">Loading leaderboard...</p>
       ) : error ? (
         <p className="text-red-500">Error: {error.message}</p>
       ) : !leaderboard ? (
-        <p>No data available.</p>
+        <p className="text-gray-400">No data available.</p>
       ) : (
         <div className="overflow-auto rounded-lg shadow-lg">
-          <table className="min-w-full text-sm text-left text-green-200 bg-gray-900 border border-green-600">
-            <thead className="text-xs uppercase bg-green-700 text-black">
+          <table className="min-w-full text-sm text-left text-gray-200 bg-[#1f1f1f] border border-[#f59e0b40]">
+            <thead className="text-xs uppercase bg-[#2d2d2d] text-[#f59e0b]">
               <tr>
                 <th className="px-4 py-3">S.No</th>
                 <th className="px-4 py-3">Name</th>
@@ -109,7 +104,7 @@ const ContestLeaderboard = ({ batch, contests }: ContestLeaderboardProps) => {
                 {tab === 'attended' && (
                   <>
                     <th className="px-4 py-3">Ranking</th>
-                    <th className="px-4 py-3">Problems Solved</th>
+                    <th className="px-4 py-3">Solved</th>
                     <th className="px-4 py-3">Trend</th>
                   </>
                 )}
@@ -122,13 +117,13 @@ const ContestLeaderboard = ({ batch, contests }: ContestLeaderboardProps) => {
               ).map((user: any, index: number) => (
                 <tr
                   key={user.id}
-                  className="border-t border-green-800 hover:bg-green-800 hover:text-black transition-all duration-200"
+                  className="border-t border-[#2c2c2c] hover:bg-[#333] hover:text-white transition-all duration-200"
                 >
                   <td className="px-4 py-3">{index + 1}</td>
                   <td className="px-4 py-3">{user.name}</td>
                   <td className="px-4 py-3">{user.leetcodeUsername}</td>
                   <td className="px-4 py-3">{user.rating}</td>
-                  {tab === 'attended' && (
+                  {tab === 'attended' && user.contest && (
                     <>
                       <td className="px-4 py-3">{user.contestRanking}</td>
                       <td className="px-4 py-3">

@@ -29,19 +29,19 @@ const Leaderboard = ({ batch }: LeaderboardProps) => {
   });
 
   if (loading)
-    return <p className="p-8 text-green-300 font-medium text-lg">Loading...</p>;
+    return <p className="p-8 text-orange-300 font-medium text-lg">Loading...</p>;
 
   if (error)
     return <p className="p-8 text-red-500 font-semibold">Error: {error.message}</p>;
 
   return (
-    <div className="p-4 bg-black min-h-screen">
-      <h2 className="text-3xl font-bold text-green-400 mb-6">
+    <div className="p-4 bg-[#111111] min-h-screen">
+      <h2 className="text-3xl font-bold text-[#f59e0b] mb-6">
         Leaderboard - {batch}
       </h2>
       <div className="overflow-auto rounded-lg shadow-lg">
-        <table className="min-w-full text-sm text-left text-green-200 bg-gray-900 border border-green-600">
-          <thead className="text-xs uppercase bg-green-700 text-black">
+        <table className="min-w-full text-sm text-left text-gray-200 bg-[#1f1f1f] border border-[#f59e0b40]">
+          <thead className="text-xs uppercase bg-[#2d2d2d] text-[#f59e0b]">
             <tr>
               <th className="px-4 py-3">S.No</th>
               <th className="px-4 py-3">Name</th>
@@ -59,10 +59,10 @@ const Leaderboard = ({ batch }: LeaderboardProps) => {
             {data.students.map((student: any, index: number) => (
               <tr
                 key={student.id}
-                className="border-t border-green-800 hover:bg-green-800 hover:text-black transition-all duration-200"
+                className="border-t border-[#2c2c2c] hover:bg-[#333] hover:text-white transition-all duration-200"
               >
                 <td className="px-4 py-3">{index + 1}</td>
-                <td className="px-4 py-3">{student.name}</td> {/* Changed here */}
+                <td className="px-4 py-3">{student.name}</td>
                 <td className="px-4 py-3">{student.rollNumber}</td>
                 <td className="px-4 py-3">{student.totalSolved}</td>
                 <td className="px-4 py-3">{student.easySolved}</td>

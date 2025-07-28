@@ -20,20 +20,28 @@ const LeaderboardPage = ({ params }: { params: Promise<{ batch: string }> }) => 
   });
 
   return (
-    <div className='p-4 bg-black'>
-      <div className='mb-4 flex gap-2'>
+    <div className="p-6 min-h-screen bg-[#111111] text-gray-200">
+      <h1 className="text-3xl font-bold mb-6 text-[#f59e0b] text-center">
+        LeetCode Leaderboard - {batch}
+      </h1>
+
+      <div className="mb-6 flex justify-center gap-4">
         <button
           onClick={() => setView('dashboard')}
-          className={`px-4 py-2 rounded ${
-            view === 'dashboard' ? 'bg-green-400 text-white' : 'bg-gray-200'
+          className={`px-6 py-2 rounded font-semibold transition ${
+            view === 'dashboard'
+              ? 'bg-[#f59e0b] text-black'
+              : 'bg-[#1f1f1f] text-[#f59e0b] border border-[#f59e0b] hover:bg-[#f59e0b90] hover:text-black'
           }`}
         >
           Dashboard
         </button>
         <button
           onClick={() => setView('contest')}
-          className={`px-4 py-2 rounded ${
-            view === 'contest' ? 'bg-green-400 text-white' : 'bg-gray-200'
+          className={`px-6 py-2 rounded font-semibold transition ${
+            view === 'contest'
+              ? 'bg-[#f59e0b] text-black'
+              : 'bg-[#1f1f1f] text-[#f59e0b] border border-[#f59e0b] hover:bg-[#f59e0b90] hover:text-black'
           }`}
         >
           Contest
@@ -43,9 +51,11 @@ const LeaderboardPage = ({ params }: { params: Promise<{ batch: string }> }) => 
       {view === 'dashboard' ? (
         <Leaderboard batch={batch} />
       ) : loading ? (
-        <p>Loading contests...</p>
+        <p className="text-[#f59e0b] text-center text-lg font-medium">
+          Loading contests...
+        </p>
       ) : error ? (
-        <p>Error fetching contests.</p>
+        <p className="text-red-500 text-center">Error fetching contests.</p>
       ) : (
         <ContestLeaderboard batch={batch} contests={data.allContests} />
       )}
