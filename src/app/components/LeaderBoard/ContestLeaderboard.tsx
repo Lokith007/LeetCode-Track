@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { gql, useQuery } from '@apollo/client';
+import { ArrowUpRight, ArrowDownRight, Trophy } from 'lucide-react';
+import { Card } from '@/components/ui/card';
 
 type ContestLeaderboardProps = {
   batch: string;
@@ -44,16 +46,17 @@ const ContestLeaderboard = ({ batch, contests }: ContestLeaderboardProps) => {
   const leaderboard = data?.contestStatusLeaderboard;
 
   return (
-    <div className="bg-[#111111] min-h-screen p-6 text-gray-200">
-      <h2 className="text-3xl font-bold mb-6 text-[#f59e0b]">
+    <div className="p-6 space-y-6 bg-white min-h-screen text-gray-900">
+      <h2 className="text-3xl font-bold text-center text-indigo-700">
         Contest Leaderboard - {batch}
       </h2>
 
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
+      {/* Contest Selector + Tabs */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
         <select
           value={selectedContest}
           onChange={(e) => setSelectedContest(e.target.value)}
-          className="bg-[#1f1f1f] text-[#f59e0b] px-4 py-2 rounded border border-[#f59e0b40] shadow"
+          className="px-4 py-2 border border-indigo-300 rounded-lg bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
         >
           {contests.map((contest) => (
             <option key={contest} value={contest}>
@@ -65,78 +68,110 @@ const ContestLeaderboard = ({ batch, contests }: ContestLeaderboardProps) => {
         <div className="flex gap-2">
           <button
             onClick={() => setTab('attended')}
-            className={`px-4 py-2 rounded border font-semibold transition ${
+            className={`px-6 py-2 rounded-lg font-semibold transition-all border border-indigo-300 shadow-sm focus:outline-none ${
               tab === 'attended'
-                ? 'bg-[#f59e0b] text-black'
-                : 'bg-[#1f1f1f] text-[#f59e0b] border-[#f59e0b] hover:bg-[#f59e0b90] hover:text-black'
+                ? 'bg-indigo-600 text-white shadow-md scale-105'
+                : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
             }`}
           >
-            Attended
+            Attended ({leaderboard?.participants?.length || 0})
           </button>
           <button
             onClick={() => setTab('notAttended')}
-            className={`px-4 py-2 rounded border font-semibold transition ${
+            className={`px-6 py-2 rounded-lg font-semibold transition-all border border-indigo-300 shadow-sm focus:outline-none ${
               tab === 'notAttended'
-                ? 'bg-[#f59e0b] text-black'
-                : 'bg-[#1f1f1f] text-[#f59e0b] border-[#f59e0b] hover:bg-[#f59e0b90] hover:text-black'
+                ? 'bg-indigo-600 text-white shadow-md scale-105'
+                : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
             }`}
           >
-            Not Attended
+            Not Attended ({leaderboard?.nonParticipants?.length || 0})
           </button>
         </div>
       </div>
 
+      {/* Content */}
       {loading ? (
-        <p className="text-[#f59e0b] text-lg font-medium">Loading leaderboard...</p>
+        <p className="text-indigo-600 font-medium">Loading leaderboard...</p>
       ) : error ? (
-        <p className="text-red-500">Error: {error.message}</p>
+        <p className="text-red-500 font-medium">Error: {error.message}</p>
       ) : !leaderboard ? (
-        <p className="text-gray-400">No data available.</p>
+        <p className="text-gray-500">No data available.</p>
+      ) : tab === 'attended' ? (
+        <div className="space-y-4">
+          {leaderboard.participants.map((user: any) => (
+            <div
+              key={user.id}
+              className="bg-gradient-to-br from-white via-blue-50 to-indigo-100 p-4 rounded-xl border border-indigo-200 shadow-sm hover:shadow-md transition-all duration-200"
+            >
+              <div className="flex items-center justify-between">
+                {/* User Info */}
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex-shrink-0">
+                    <span className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-indigo-200 text-indigo-700 font-bold">
+                      {user.name?.[0]?.toUpperCase() || '?'}
+                    </span>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 truncate">{user.name}</p>
+                    <p className="text-xs text-gray-500 truncate">@{user.leetcodeUsername}</p>
+                  </div>
+                </div>
+
+                {/* Stats */}
+                <div className="flex flex-wrap gap-4 items-center text-sm">
+                  <div className="text-center">
+                    <p className="font-semibold text-gray-900">{Number(user.rating).toFixed(2)}</p>
+                    <p className="text-xs text-gray-500">Rating</p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Trophy className="h-4 w-4 text-yellow-500" />
+                    <span className="font-semibold text-gray-900">#{user.contestRanking}</span>
+                  </div>
+                  <div className="text-center">
+                    <p className="font-semibold text-gray-900">
+                      {user.contest.problemsSolved}/{user.contest.totalProblems}
+                    </p>
+                    <p className="text-xs text-gray-500">Solved</p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {user.contest.trendDirection === 'UP' ? (
+                      <ArrowUpRight className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <ArrowDownRight className="h-4 w-4 text-red-500" />
+                    )}
+                    <span className="text-xs text-gray-600">{user.contest.trendDirection}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       ) : (
-        <div className="overflow-auto rounded-lg shadow-lg">
-          <table className="min-w-full text-sm text-left text-gray-200 bg-[#1f1f1f] border border-[#f59e0b40]">
-            <thead className="text-xs uppercase bg-[#2d2d2d] text-[#f59e0b]">
+        <Card className="overflow-x-auto p-0 border border-indigo-200">
+          <table className="min-w-full text-sm text-gray-800">
+            <thead className="bg-indigo-100 border-b text-indigo-700 text-xs uppercase sticky top-0">
               <tr>
-                <th className="px-4 py-3">S.No</th>
-                <th className="px-4 py-3">Name</th>
-                <th className="px-4 py-3">Username</th>
-                <th className="px-4 py-3">Rating</th>
-                {tab === 'attended' && (
-                  <>
-                    <th className="px-4 py-3">Ranking</th>
-                    <th className="px-4 py-3">Solved</th>
-                    <th className="px-4 py-3">Trend</th>
-                  </>
-                )}
+                <th className="px-4 py-3 text-left font-bold">Name</th>
+                <th className="px-4 py-3 text-left font-bold">Username</th>
+                <th className="px-4 py-3 text-left font-bold">Rating</th>
               </tr>
             </thead>
             <tbody>
-              {(tab === 'attended'
-                ? leaderboard.participants
-                : leaderboard.nonParticipants
-              ).map((user: any, index: number) => (
+              {leaderboard.nonParticipants.map((user: any, idx: number) => (
                 <tr
                   key={user.id}
-                  className="border-t border-[#2c2c2c] hover:bg-[#333] hover:text-white transition-all duration-200"
+                  className={`transition-all duration-150 hover:bg-indigo-50 ${
+                    idx % 2 === 0 ? 'bg-white' : 'bg-blue-50'
+                  }`}
                 >
-                  <td className="px-4 py-3">{index + 1}</td>
-                  <td className="px-4 py-3">{user.name}</td>
-                  <td className="px-4 py-3">{user.leetcodeUsername}</td>
-                  <td className="px-4 py-3">{user.rating}</td>
-                  {tab === 'attended' && user.contest && (
-                    <>
-                      <td className="px-4 py-3">{user.contestRanking}</td>
-                      <td className="px-4 py-3">
-                        {user.contest.problemsSolved}/{user.contest.totalProblems}
-                      </td>
-                      <td className="px-4 py-3">{user.contest.trendDirection}</td>
-                    </>
-                  )}
+                  <td className="px-4 py-2 font-medium">{user.name}</td>
+                  <td className="px-4 py-2">@{user.leetcodeUsername}</td>
+                  <td className="px-4 py-2">{Number(user.rating).toFixed(2)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </div>
+        </Card>
       )}
     </div>
   );
