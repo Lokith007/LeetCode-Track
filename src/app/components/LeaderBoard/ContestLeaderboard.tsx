@@ -5,11 +5,6 @@ import { gql, useQuery } from '@apollo/client';
 import { ArrowUpRight, ArrowDownRight, Trophy } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 
-type ContestLeaderboardProps = {
-  batch: string;
-  contests: string[];
-};
-
 const GET_CONTEST_STATUS_LEADERBOARD = gql`
   query GetContestStatusLeaderboard($batch: String!, $title: String!) {
     contestStatusLeaderboard(batch: $batch, title: $title) {
@@ -35,9 +30,16 @@ const GET_CONTEST_STATUS_LEADERBOARD = gql`
   }
 `;
 
-const ContestLeaderboard = ({ batch, contests }: ContestLeaderboardProps) => {
+type ContestLeaderboardProps = {
+  batch: string;
+  contests: string[];
+  view : string;
+  setView : any;
+};
+
+const ContestLeaderboard = ({ batch, contests  , view  , setView}: ContestLeaderboardProps) => {
   const [selectedContest, setSelectedContest] = useState(contests[0]);
-  const [tab, setTab] = useState<'attended' | 'notAttended'>('attended');
+  const [viewMode, setViewMode] = useState<'attended' | 'notAttended'>('attended');
 
   const { data, loading, error } = useQuery(GET_CONTEST_STATUS_LEADERBOARD, {
     variables: { batch, title: selectedContest },
@@ -46,17 +48,25 @@ const ContestLeaderboard = ({ batch, contests }: ContestLeaderboardProps) => {
   const leaderboard = data?.contestStatusLeaderboard;
 
   return (
-    <div className="p-6 space-y-6 bg-[#1a1a1a] border border-orange-300 rounded-lg min-h-screen text-gray-900">
-      <h2 className="text-3xl font-bold text-center text-orange-400">
-        Contest Leaderboard - {batch}
+    <div className="min-h-screen p-6  text-gray-100 space-y-6 rounded-xl   shadow">
+         <button
+            onClick={() => setView("dashboard")}
+            className={`px-6 py-2 rounded-lg font-semibold transition-all duration-200 shadow-sm border text-sm
+            bg-[#1f1f1f] border-gray-700 text-gray-300 hover:bg-gray-700
+              }`}
+          >
+            {"<-"}
+          </button>
+      <h2 className="text-3xl font-extrabold text-center text-orange-300">
+        📊 Contest Leaderboard - {batch}
       </h2>
 
-      {/* Contest Selector + Tabs */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+      {/* Top Controls */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4">
         <select
           value={selectedContest}
           onChange={(e) => setSelectedContest(e.target.value)}
-          className="text-orange-400 px-4 py-2 border border-orange-300 rounded-lg bg-[#1a1a1a] shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+          className="w-full md:w-auto px-4 py-2 rounded-md bg-[#2a2a2a] text-orange-300 border border-orange-400 focus:outline-none"
         >
           {contests.map((contest) => (
             <option key={contest} value={contest}>
@@ -66,102 +76,94 @@ const ContestLeaderboard = ({ batch, contests }: ContestLeaderboardProps) => {
         </select>
 
         <div className="flex gap-2">
-          <button
-            onClick={() => setTab('attended')}
-            className={`px-6 py-2 rounded-lg font-semibold transition-all border border-orange-300 shadow-sm focus:outline-none ${
-              tab === 'attended'
-                ? 'bg-orange-400 text-white shadow-md scale-105'
-                : 'bg-orange-50 text-orange-700 hover:bg-orange-100'
-            }`}
-          >
-            Attended ({leaderboard?.participants?.length || 0})
-          </button>
-          <button
-            onClick={() => setTab('notAttended')}
-            className={`px-6 py-2 rounded-lg font-semibold transition-all border border-orange-300 shadow-sm focus:outline-none ${
-              tab === 'notAttended'
-                ? 'bg-orange-500 text-white shadow-md scale-105'
-                : 'bg-orange-50 text-orange-700 hover:bg-orange-100'
-            }`}
-          >
-            Not Attended ({leaderboard?.nonParticipants?.length || 0})
-          </button>
+          {(['attended', 'notAttended'] as const).map((mode) => (
+            <button
+              key={mode}
+              onClick={() => setViewMode(mode)}
+              className={`px-5 py-2 rounded-lg font-semibold border transition-all ${
+                viewMode === mode
+                  ? 'bg-orange-400 text-white scale-105 shadow-md'
+                  : 'bg-transparent text-orange-300 border-orange-400 hover:bg-gray-700'
+              }`}
+            >
+              {mode === 'attended'
+                ? `Attended (${leaderboard?.participants?.length || 0})`
+                : `Not Attended (${leaderboard?.nonParticipants?.length || 0})`}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Content */}
+      {/* Loading / Error / No Data */}
       {loading ? (
-        <p className="text-orange-600 font-medium">Loading leaderboard...</p>
+        <p className="text-center text-orange-400 font-medium text-lg">Loading leaderboard...</p>
       ) : error ? (
-        <p className="text-red-500 font-medium">Error: {error.message}</p>
+        <p className="text-center text-red-500 font-semibold">Error: {error.message}</p>
       ) : !leaderboard ? (
-        <p className="text-gray-500">No data available.</p>
-      ) : tab === 'attended' ? (
+        <p className="text-center text-gray-400">No data available.</p>
+      ) : viewMode === 'attended' ? (
         <div className="space-y-4">
-          {leaderboard.participants.map((user: any) => (
-            <div
-              key={user.id}
-              className="bg-gradient-to-br from-white via-gray-50 to-orange-100 p-4 rounded-xl border border-orange-200 shadow-sm hover:shadow-md transition-all duration-200"
-            >
-              <div className="flex items-center justify-between">
-                {/* User Info */}
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="flex-shrink-0">
-                    <span className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-orange-200 text-orange-700 font-bold">
-                      {user.name?.[0]?.toUpperCase() || '?'}
-                    </span>
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate">{user.name}</p>
-                    <p className="text-xs text-gray-500 truncate">@{user.leetcodeUsername}</p>
-                  </div>
-                </div>
-
-                {/* Stats */}
-                <div className="flex flex-wrap gap-4 items-center text-sm">
-                  <div className="text-center">
-                    <p className="font-semibold text-gray-900">{Number(user.rating).toFixed(2)}</p>
-                    <p className="text-xs text-gray-500">Rating</p>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Trophy className="h-4 w-4 text-yellow-500" />
-                    <span className="font-semibold text-gray-900">#{user.contestRanking}</span>
-                  </div>
-                  <div className="text-center">
-                    <p className="font-semibold text-gray-900">
-                      {user.contest.problemsSolved}/{user.contest.totalProblems}
-                    </p>
-                    <p className="text-xs text-gray-500">Solved</p>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    {user.contest.trendDirection === 'UP' ? (
-                      <ArrowUpRight className="h-4 w-4 text-green-500" />
-                    ) : (
-                      <ArrowDownRight className="h-4 w-4 text-red-500" />
-                    )}
-                    <span className="text-xs text-gray-600">{user.contest.trendDirection}</span>
-                  </div>
-                </div>
+        {leaderboard.participants.map((user: any) => (
+          <div
+            key={user.id}
+            className="bg-[#2c2c2c] rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between shadow border border-gray-700 hover:border-orange-300 transition-all"
+          >
+            {/* Left: Avatar + Name */}
+            <div className="flex items-center gap-4 w-full sm:w-1/3">
+              <div className="bg-orange-300 text-black font-bold rounded-full w-12 h-12 flex items-center justify-center text-xl">
+                {user.name?.[0]?.toUpperCase() || '?'}
+              </div>
+              <div>
+                <p className="text-white font-semibold text-base truncate">{user.name}</p>
+                <p className="text-gray-400 text-sm truncate">@{user.leetcodeUsername}</p>
               </div>
             </div>
-          ))}
-        </div>
+      
+            {/* Middle: Stats Grid */}
+            <div className="grid grid-cols-4 gap-6 mt-4 sm:mt-0 w-full sm:w-2/3 text-center">
+              <div>
+                <p className="font-bold text-white text-lg">{Number(user.rating).toFixed(2)}</p>
+                <p className="text-gray-400 text-xs">Rating</p>
+              </div>
+              <div className="flex justify-center items-center gap-1">
+                <Trophy className="h-4 w-4 text-yellow-400" />
+                <span className="font-semibold text-white text-sm">#{user.contestRanking}</span>
+              </div>
+              <div>
+                <p className="font-bold text-white text-lg">
+                  {user.contest.problemsSolved}/{user.contest.totalProblems}
+                </p>
+                <p className="text-gray-400 text-xs">Solved</p>
+              </div>
+              <div className="flex items-center justify-center gap-1">
+                {user.contest.trendDirection === 'UP' ? (
+                  <ArrowUpRight className="h-4 w-4 text-green-500" />
+                ) : (
+                  <ArrowDownRight className="h-4 w-4 text-red-500" />
+                )}
+                <span className="text-sm text-gray-400">{user.contest.trendDirection}</span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      
       ) : (
-        <Card className="overflow-x-auto p-0 border border-orange-200">
-          <table className="min-w-full text-sm text-gray-800">
-            <thead className="bg-orange-100 border-b text-orange-700 text-xs uppercase sticky top-0">
+        <Card className="overflow-x-auto border border-gray-700 bg-[#2a2a2a] rounded-xl">
+          <table className="min-w-full text-sm text-left text-gray-100">
+            <thead className="bg-[#333] text-orange-300 uppercase text-xs">
               <tr>
-                <th className="px-4 py-3 text-left font-bold">Name</th>
-                <th className="px-4 py-3 text-left font-bold">Username</th>
-                <th className="px-4 py-3 text-left font-bold">Rating</th>
+                <th className="px-4 py-3">Name</th>
+                <th className="px-4 py-3">Username</th>
+                <th className="px-4 py-3">Rating</th>
               </tr>
             </thead>
             <tbody>
-              {leaderboard.nonParticipants.map((user: any, idx: number) => (
+              {leaderboard.nonParticipants.map((user: any, index: number) => (
                 <tr
                   key={user.id}
-                  className={`transition-all duration-150 hover:bg-orange-50 ${
-                    idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                  className={`transition-all hover:bg-gray-700 ${
+                    index % 2 === 0 ? 'bg-[#2a2a2a]' : 'bg-[#1f1f1f]'
                   }`}
                 >
                   <td className="px-4 py-2 font-medium">{user.name}</td>

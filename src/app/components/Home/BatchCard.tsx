@@ -17,7 +17,7 @@ export default function BatchCard({ batch }: BatchCardProps) {
 
   return (
     <Card
-      onClick={() => router.push(`/leaderboard/${batch.name}`)}
+      onClick={() => router.push(`/sections/${batch.name}`)}
       className="cursor-pointer transition-all duration-300 p-4 bg-[#1a1a1a] border border-orange-400 shadow-md rounded-2xl hover:shadow-lg hover:scale-105 hover:border-orange-300 hover:ring-2 hover:ring-orange-200 group"
     >
       <CardContent className="relative">

@@ -20,45 +20,45 @@ const LeaderboardPage = ({ params }: { params: Promise<{ batch: string }> }) => 
   });
 
   return (
-    <div className="min-h-screen p-6 bg-[#1a1a1a] text-gray-100">
-      <h1 className="text-3xl font-extrabold mb-8 text-orange-400 text-center drop-shadow-md">
-        🏆 LeetCode Leaderboard - {batch}
-      </h1>
+    <div className="min-h-screen bg-[#121212] text-gray-300 px-6 py-10 space-y-10">
+  
 
-      <div className="flex justify-center gap-4 mb-8">
+      {/* View Switch Tabs */}
+      {/* <div className="flex justify-start gap-4">
         <button
           onClick={() => setView('dashboard')}
-          className={`px-6 py-2 rounded-lg font-semibold transition shadow-md ${
+          className={`px-5 py-2 rounded-md font-medium transition-all duration-200 text-sm shadow-sm border ${
             view === 'dashboard'
-              ? 'bg-orange-400 text-white'
-              : 'bg-[#1a1a1a] border border-orange-400 text-orange-300 hover:bg-gray-700'
+              ? 'bg-[#fcd9b8] text-black'
+              : 'bg-[#1e1e1e] text-gray-300 border-gray-600 hover:bg-gray-800'
           }`}
         >
-          Dashboard
+          Dashboard View
         </button>
         <button
           onClick={() => setView('contest')}
-          className={`px-6 py-2 rounded-lg font-semibold transition shadow-md ${
+          className={`px-5 py-2 rounded-md font-medium transition-all duration-200 text-sm shadow-sm border ${
             view === 'contest'
-              ? 'bg-orange-400 text-white'
-              : 'bg-[#1a1a1a] border border-orange-400 text-orange-300 hover:bg-gray-700'
+              ? 'bg-[#fcd9b8] text-black'
+              : 'bg-[#1e1e1e] text-gray-300 border-gray-600 hover:bg-gray-800'
           }`}
         >
-          Contest
+          Contest View
         </button>
-      </div>
+      </div> */}
 
-      {view === 'dashboard' ? (
-        <Leaderboard batch={batch} />
-      ) : loading ? (
-        <p className="text-orange-300 text-center text-lg font-medium">
-          Loading contests...
-        </p>
-      ) : error ? (
-        <p className="text-red-500 text-center">Error fetching contests.</p>
-      ) : (
-        <ContestLeaderboard batch={batch} contests={data.allContests} />
-      )}
+      {/* Main Content */}
+      <div className="w-full max-w-7xl mx-auto">
+        {view === 'dashboard' ? (
+          <Leaderboard batch={batch} view={view} setView={setView} />
+        ) : loading ? (
+          <p className="text-center text-[#fcd9b8] text-lg font-medium">Loading contests...</p>
+        ) : error ? (
+          <p className="text-center text-red-500 font-medium">Error fetching contests.</p>
+        ) : (
+          <ContestLeaderboard batch={batch} contests={data.allContests} view={view} setView={setView} />
+        )}
+      </div>
     </div>
   );
 };
