@@ -20,18 +20,18 @@ const LeaderboardPage = ({ params }: { params: Promise<{ batch: string }> }) => 
   });
 
   return (
-    <div className="p-6 min-h-screen bg-gradient-to-b from-white via-blue-50 to-indigo-100 text-gray-800">
-      <h1 className="text-3xl font-bold mb-6 text-indigo-700 text-center drop-shadow">
-        LeetCode Leaderboard - {batch}
+    <div className="min-h-screen p-6 bg-[#1a1a1a] text-gray-100">
+      <h1 className="text-3xl font-extrabold mb-8 text-orange-400 text-center drop-shadow-md">
+        🏆 LeetCode Leaderboard - {batch}
       </h1>
 
-      <div className="mb-6 flex justify-center gap-4">
+      <div className="flex justify-center gap-4 mb-8">
         <button
           onClick={() => setView('dashboard')}
           className={`px-6 py-2 rounded-lg font-semibold transition shadow-md ${
             view === 'dashboard'
-              ? 'bg-indigo-600 text-white'
-              : 'bg-white border border-indigo-400 text-indigo-600 hover:bg-indigo-50'
+              ? 'bg-orange-400 text-white'
+              : 'bg-[#1a1a1a] border border-orange-400 text-orange-300 hover:bg-gray-700'
           }`}
         >
           Dashboard
@@ -40,8 +40,8 @@ const LeaderboardPage = ({ params }: { params: Promise<{ batch: string }> }) => 
           onClick={() => setView('contest')}
           className={`px-6 py-2 rounded-lg font-semibold transition shadow-md ${
             view === 'contest'
-              ? 'bg-indigo-600 text-white'
-              : 'bg-white border border-indigo-400 text-indigo-600 hover:bg-indigo-50'
+              ? 'bg-orange-400 text-white'
+              : 'bg-[#1a1a1a] border border-orange-400 text-orange-300 hover:bg-gray-700'
           }`}
         >
           Contest
@@ -51,7 +51,7 @@ const LeaderboardPage = ({ params }: { params: Promise<{ batch: string }> }) => 
       {view === 'dashboard' ? (
         <Leaderboard batch={batch} />
       ) : loading ? (
-        <p className="text-indigo-600 text-center text-lg font-medium">
+        <p className="text-orange-300 text-center text-lg font-medium">
           Loading contests...
         </p>
       ) : error ? (

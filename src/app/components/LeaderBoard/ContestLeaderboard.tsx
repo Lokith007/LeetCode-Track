@@ -46,8 +46,8 @@ const ContestLeaderboard = ({ batch, contests }: ContestLeaderboardProps) => {
   const leaderboard = data?.contestStatusLeaderboard;
 
   return (
-    <div className="p-6 space-y-6 bg-white min-h-screen text-gray-900">
-      <h2 className="text-3xl font-bold text-center text-indigo-700">
+    <div className="p-6 space-y-6 bg-[#1a1a1a] border border-orange-300 rounded-lg min-h-screen text-gray-900">
+      <h2 className="text-3xl font-bold text-center text-orange-400">
         Contest Leaderboard - {batch}
       </h2>
 
@@ -56,7 +56,7 @@ const ContestLeaderboard = ({ batch, contests }: ContestLeaderboardProps) => {
         <select
           value={selectedContest}
           onChange={(e) => setSelectedContest(e.target.value)}
-          className="px-4 py-2 border border-indigo-300 rounded-lg bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          className="text-orange-400 px-4 py-2 border border-orange-300 rounded-lg bg-[#1a1a1a] shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
         >
           {contests.map((contest) => (
             <option key={contest} value={contest}>
@@ -68,20 +68,20 @@ const ContestLeaderboard = ({ batch, contests }: ContestLeaderboardProps) => {
         <div className="flex gap-2">
           <button
             onClick={() => setTab('attended')}
-            className={`px-6 py-2 rounded-lg font-semibold transition-all border border-indigo-300 shadow-sm focus:outline-none ${
+            className={`px-6 py-2 rounded-lg font-semibold transition-all border border-orange-300 shadow-sm focus:outline-none ${
               tab === 'attended'
-                ? 'bg-indigo-600 text-white shadow-md scale-105'
-                : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
+                ? 'bg-orange-400 text-white shadow-md scale-105'
+                : 'bg-orange-50 text-orange-700 hover:bg-orange-100'
             }`}
           >
             Attended ({leaderboard?.participants?.length || 0})
           </button>
           <button
             onClick={() => setTab('notAttended')}
-            className={`px-6 py-2 rounded-lg font-semibold transition-all border border-indigo-300 shadow-sm focus:outline-none ${
+            className={`px-6 py-2 rounded-lg font-semibold transition-all border border-orange-300 shadow-sm focus:outline-none ${
               tab === 'notAttended'
-                ? 'bg-indigo-600 text-white shadow-md scale-105'
-                : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
+                ? 'bg-orange-500 text-white shadow-md scale-105'
+                : 'bg-orange-50 text-orange-700 hover:bg-orange-100'
             }`}
           >
             Not Attended ({leaderboard?.nonParticipants?.length || 0})
@@ -91,7 +91,7 @@ const ContestLeaderboard = ({ batch, contests }: ContestLeaderboardProps) => {
 
       {/* Content */}
       {loading ? (
-        <p className="text-indigo-600 font-medium">Loading leaderboard...</p>
+        <p className="text-orange-600 font-medium">Loading leaderboard...</p>
       ) : error ? (
         <p className="text-red-500 font-medium">Error: {error.message}</p>
       ) : !leaderboard ? (
@@ -101,13 +101,13 @@ const ContestLeaderboard = ({ batch, contests }: ContestLeaderboardProps) => {
           {leaderboard.participants.map((user: any) => (
             <div
               key={user.id}
-              className="bg-gradient-to-br from-white via-blue-50 to-indigo-100 p-4 rounded-xl border border-indigo-200 shadow-sm hover:shadow-md transition-all duration-200"
+              className="bg-gradient-to-br from-white via-gray-50 to-orange-100 p-4 rounded-xl border border-orange-200 shadow-sm hover:shadow-md transition-all duration-200"
             >
               <div className="flex items-center justify-between">
                 {/* User Info */}
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="flex-shrink-0">
-                    <span className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-indigo-200 text-indigo-700 font-bold">
+                    <span className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-orange-200 text-orange-700 font-bold">
                       {user.name?.[0]?.toUpperCase() || '?'}
                     </span>
                   </div>
@@ -147,9 +147,9 @@ const ContestLeaderboard = ({ batch, contests }: ContestLeaderboardProps) => {
           ))}
         </div>
       ) : (
-        <Card className="overflow-x-auto p-0 border border-indigo-200">
+        <Card className="overflow-x-auto p-0 border border-orange-200">
           <table className="min-w-full text-sm text-gray-800">
-            <thead className="bg-indigo-100 border-b text-indigo-700 text-xs uppercase sticky top-0">
+            <thead className="bg-orange-100 border-b text-orange-700 text-xs uppercase sticky top-0">
               <tr>
                 <th className="px-4 py-3 text-left font-bold">Name</th>
                 <th className="px-4 py-3 text-left font-bold">Username</th>
@@ -160,8 +160,8 @@ const ContestLeaderboard = ({ batch, contests }: ContestLeaderboardProps) => {
               {leaderboard.nonParticipants.map((user: any, idx: number) => (
                 <tr
                   key={user.id}
-                  className={`transition-all duration-150 hover:bg-indigo-50 ${
-                    idx % 2 === 0 ? 'bg-white' : 'bg-blue-50'
+                  className={`transition-all duration-150 hover:bg-orange-50 ${
+                    idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'
                   }`}
                 >
                   <td className="px-4 py-2 font-medium">{user.name}</td>
