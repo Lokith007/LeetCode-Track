@@ -22,7 +22,7 @@ export default function BatchCard({ batch }: BatchCardProps) {
     >
       <CardContent className="relative">
         <div className="flex items-start justify-between mb-3">
-          <div className="bg-orange-500 rounded-lg p-2 shadow-sm group-hover:scale-110 transition-transform duration-300">
+          <div className="bg-orange-400 rounded-lg p-2 shadow-sm group-hover:scale-110 transition-transform duration-300">
             <Trophy className="h-5 w-5 text-white" />
           </div>
           <ArrowRight className="h-5 w-5 text-orange-300 group-hover:text-orange-200 group-hover:translate-x-1 transition-all duration-300" />

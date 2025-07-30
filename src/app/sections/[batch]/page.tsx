@@ -24,6 +24,11 @@ const LeetCodeSections = () => {
     }
   }
 
+  const isSDESection = (name: string) => {
+    const suffix = name.split(' ')[1]
+    return ['L', 'M', 'N', 'O', 'P', 'Q'].includes(suffix)
+  }
+
   return (
     <div className="min-h-screen bg-[#121212] text-gray-300 py-12 px-4 sm:px-6 lg:px-12 space-y-10">
       <div className="text-center space-y-2">
@@ -70,6 +75,11 @@ const LeetCodeSections = () => {
                   {section.name}
                 </h3>
                 <p className="text-xs text-gray-500">Leaderboard</p>
+                {isSDESection(section.name) && (
+                  <p className="text-[11px] font-medium text-orange-300 mt-1">
+                    SDE
+                  </p>
+                )}
               </div>
             </div>
           </Card>
