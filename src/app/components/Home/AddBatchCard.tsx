@@ -12,7 +12,7 @@ export default function AddBatchCard() {
   return (
     <Card
       onClick={handleClick}
-      className="cursor-pointer flex items-center justify-center p-6 border-2 border-dashed border-orange-300 bg-[#121212] rounded-2xl shadow-md transition-all duration-300 hover:shadow-lg hover:scale-105 hover:border-orange-300 hover:ring-2 hover:ring-orange-200 group"
+      className="cursor-pointer flex items-center justify-center p-6 border-2 border-dashed border-orange-300 bg-[#1e1e1e] rounded-2xl shadow-md transition-all duration-300 hover:shadow-lg hover:scale-105 hover:border-orange-300 hover:ring-2 hover:ring-orange-200 group"
     >
       <CardContent className="flex flex-col items-center text-center">
         <Button

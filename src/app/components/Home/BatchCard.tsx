@@ -18,7 +18,7 @@ export default function BatchCard({ batch }: BatchCardProps) {
   return (
     <Card
       onClick={() => router.push(`/sections/${batch.name}`)}
-      className="cursor-pointer transition-all duration-300 p-4 bg-[#121212] border border-orange-300 shadow-md rounded-2xl hover:shadow-lg hover:scale-105 hover:border-orange-300 hover:ring-2 hover:ring-orange-200 group"
+      className="cursor-pointer transition-all duration-300 p-4 bg-[#1e1e1e] border border-orange-300 shadow-md rounded-2xl hover:shadow-lg hover:scale-105 hover:border-orange-300 hover:ring-2 hover:ring-orange-200 group"
     >
       <CardContent className="relative">
         <div className="flex items-start justify-between mb-3">
