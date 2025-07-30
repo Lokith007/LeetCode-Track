@@ -3,13 +3,16 @@
 import { useRouter } from 'next/navigation'
 import { GraduationCap, Users } from 'lucide-react'
 import { Card } from '@/components/ui/card'
+import CsvUploader from '@/app/components/csvParser/csvParser'
+import { use } from 'react'
 
 const cseSections = Array.from({ length: 17 }, (_, i) => ({
   name: `CSE ${String.fromCharCode(65 + i)}`, // CSE A → CSE Q
 }))
 
-const LeetCodeSections = () => {
+const LeetCodeSections = ({ params }: { params: Promise<{ batch: string }> }) => {
   const router = useRouter()
+  const { batch } = use(params);
 
   const handleSectionClick = (sectionName?: string) => {
     const currentPath = window.location.pathname
@@ -39,6 +42,7 @@ const LeetCodeSections = () => {
           Click on a section to explore its leaderboard
         </p>
       </div>
+
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
         {/* All Sections Card */}
@@ -85,6 +89,11 @@ const LeetCodeSections = () => {
           </Card>
         ))}
       </div>
+      <div className='absolute right-5 bottom-5'>
+
+      <CsvUploader batch={batch} />
+      </div>
+
     </div>
   )
 }
