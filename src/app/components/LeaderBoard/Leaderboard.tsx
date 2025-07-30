@@ -71,7 +71,7 @@ const Leaderboard = ({ batch, view, setView }: LeaderboardProps) => {
               : 'bg-[#1f1f1f] border-gray-700 text-gray-300 hover:bg-gray-700'
               }`}
           >
-            {tab === 'dashboard' ? 'Dashboard' : 'Latest Contests'}
+            {tab === 'dashboard' ? 'Dashboard' : 'Latest Contest'}
           </button>
         ))}
         <button

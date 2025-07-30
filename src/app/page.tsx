@@ -11,10 +11,10 @@ export default function HomePage() {
   const { userEmail, logout } = useAuth()
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-start bg-[#1a1a1a] text-orange-400 py-12 px-4 font-sans">
+    <main className="min-h-screen flex flex-col items-center justify-start bg-[#121212] text-orange-400 py-12 px-4 font-sans">
       {/* Header with user info and logout */}
       <div className="w-full max-w-6xl mb-10 flex justify-between items-center">
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-orange-500 flex items-center gap-2 drop-shadow">
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-orange-400 flex items-center gap-2 drop-shadow">
           🏆 LeetCode Tracker
         </h1>
         <div className="flex items-center gap-4 text-sm">

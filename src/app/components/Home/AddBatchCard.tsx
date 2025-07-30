@@ -12,7 +12,7 @@ export default function AddBatchCard() {
   return (
     <Card
       onClick={handleClick}
-      className="cursor-pointer flex items-center justify-center p-6 border-2 border-dashed border-orange-400 bg-[#1a1a1a] rounded-2xl shadow-md transition-all duration-300 hover:shadow-lg hover:scale-105 hover:border-orange-300 hover:ring-2 hover:ring-orange-200 group"
+      className="cursor-pointer flex items-center justify-center p-6 border-2 border-dashed border-orange-300 bg-[#121212] rounded-2xl shadow-md transition-all duration-300 hover:shadow-lg hover:scale-105 hover:border-orange-300 hover:ring-2 hover:ring-orange-200 group"
     >
       <CardContent className="flex flex-col items-center text-center">
         <Button
@@ -22,10 +22,10 @@ export default function AddBatchCard() {
         >
           <Plus className="h-8 w-8 transition-transform group-hover:rotate-90 duration-300" />
         </Button>
-        <p className="text-orange-300 font-bold text-lg group-hover:text-orange-200 transition-colors">
+        <p className="text-gray-200 font-bold text-lg group-hover:text-orange-200 transition-colors">
           Add a Batch
         </p>
-        <p className="text-orange-400 text-sm mt-1 opacity-70 group-hover:opacity-90 transition-opacity">
+        <p className="text-gray-300 text-sm mt-1 opacity-70 group-hover:opacity-90 transition-opacity">
           Create new batch
         </p>
       </CardContent>

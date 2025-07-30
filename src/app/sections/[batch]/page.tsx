@@ -27,7 +27,7 @@ const LeetCodeSections = () => {
   return (
     <div className="min-h-screen bg-[#121212] text-gray-300 py-12 px-4 sm:px-6 lg:px-12 space-y-10">
       <div className="text-center space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight text-[#fcd9b8]">
+        <h2 className="text-3xl font-bold tracking-tight text-orange-400">
           CSE Sections
         </h2>
         <p className="text-sm text-gray-400">
@@ -39,7 +39,7 @@ const LeetCodeSections = () => {
         {/* All Sections Card */}
         <Card
           onClick={() => handleSectionClick(undefined)}
-          className="group cursor-pointer bg-[#1e1e1e] border border-gray-700 rounded-2xl p-5 transition hover:border-[#fcd9b8] hover:shadow-lg hover:scale-105"
+          className="group cursor-pointer bg-[#121212] border border-orange-300 rounded-2xl p-5 transition hover:border-[#fcd9b8] hover:shadow-lg hover:scale-105"
         >
           <div className="flex flex-col items-center text-center space-y-3">
             <div className="p-3 rounded-full bg-gray-800 group-hover:bg-[#fcd9b8] transition-colors">
@@ -59,7 +59,7 @@ const LeetCodeSections = () => {
           <Card
             key={section.name}
             onClick={() => handleSectionClick(section.name)}
-            className="group cursor-pointer bg-[#1e1e1e] border border-gray-700 rounded-2xl p-5 transition hover:border-[#fcd9b8] hover:shadow-lg hover:scale-105"
+            className="group cursor-pointer bg-[#121212] border border-orange-300 rounded-2xl p-5 transition hover:border-[#fcd9b8] hover:shadow-lg hover:scale-105"
           >
             <div className="flex flex-col items-center text-center space-y-3">
               <div className="p-3 rounded-full bg-gray-800 group-hover:bg-[#fcd9b8] transition-colors">

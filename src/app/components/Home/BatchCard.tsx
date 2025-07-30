@@ -18,7 +18,7 @@ export default function BatchCard({ batch }: BatchCardProps) {
   return (
     <Card
       onClick={() => router.push(`/sections/${batch.name}`)}
-      className="cursor-pointer transition-all duration-300 p-4 bg-[#1a1a1a] border border-orange-400 shadow-md rounded-2xl hover:shadow-lg hover:scale-105 hover:border-orange-300 hover:ring-2 hover:ring-orange-200 group"
+      className="cursor-pointer transition-all duration-300 p-4 bg-[#121212] border border-orange-300 shadow-md rounded-2xl hover:shadow-lg hover:scale-105 hover:border-orange-300 hover:ring-2 hover:ring-orange-200 group"
     >
       <CardContent className="relative">
         <div className="flex items-start justify-between mb-3">
@@ -27,14 +27,14 @@ export default function BatchCard({ batch }: BatchCardProps) {
           </div>
           <ArrowRight className="h-5 w-5 text-orange-300 group-hover:text-orange-200 group-hover:translate-x-1 transition-all duration-300" />
         </div>
-        <h2 className="text-xl font-bold text-orange-300 group-hover:text-orange-200 transition-colors mb-2">
+        <h2 className="text-xl font-bold text-gray-200 group-hover:text-orange-200 transition-colors mb-2">
           {batch.displayName}
         </h2>
         <Button
           variant="ghost"
-          className="flex items-center gap-1 text-orange-400 hover:text-orange-200 px-0 py-0 h-auto text-sm font-medium bg-transparent shadow-none"
+          className="flex items-center gap-1 text-gray-300 hover:text-orange-200 px-0 py-0 h-auto text-sm font-medium bg-transparent shadow-none"
         >
-          <Users className="h-4 w-4 mr-1" />
+          <Users className="h-4 w-4 mr-1 text-orange-400" />
           View leaderboard
         </Button>
       </CardContent>
