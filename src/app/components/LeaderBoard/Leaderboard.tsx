@@ -85,70 +85,77 @@ const Leaderboard = ({ batch, view, setView }: LeaderboardProps) => {
       </div>
 
       {activeTab === 'dashboard' && (
-        <div className="space-y-4">
-          {data.students.map((student: any, index: number) => (
-            <div
-              key={student.id}
-              className="grid grid-cols-[0.5fr_2fr_1.2fr_1fr_1.5fr_1fr_1fr_1fr] gap-4 items-center px-6 py-4 bg-[#1f1f1f] rounded-xl shadow-md border border-[#f59e0b40]"
-            >
-              {/* S.No */}
-              <div className="text-center text-sm font-semibold text-gray-300">{index + 1}</div>
+  <div className="space-y-6">
+    {/* Search + Filter Row */}
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Search bar */}
+      <input
+        type="text"
+        placeholder="Search by name or roll number..."
+        className="w-full sm:w-1/3 px-4 py-2 rounded-md bg-[#1f1f1f] text-sm text-gray-200 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-[#fcd9b8]"
+      />
 
-              {/* Name & Avatar */}
-              <div className="flex items-center gap-4 min-w-0">
-                <div className="w-10 h-10 rounded-full bg-[#fcd9b8] text-black font-bold flex items-center justify-center text-sm">
-                  {student.name[0]}
-                </div>
-                <div className="min-w-0">
-                  <div className="font-semibold text-base truncate">{student.name}</div>
-                  <div className="text-sm text-gray-400 truncate">@{student.rollNumber}</div>
-                </div>
-              </div>
+      {/* SDE filter buttons */}
+      <div className="flex gap-2">
+        {['All', 'SDE', 'Non-SDE'].map((type) => (
+          <button
+            key={type}
+            className="px-4 py-2 rounded-lg text-sm font-semibold border shadow-sm bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700"
+          >
+            {type}
+          </button>
+        ))}
+      </div>
+    </div>
 
-              {/* Reg No */}
-              <div className="text-center text-sm text-gray-300 truncate">{student.rollNumber}</div>
-
-              {/* Section */}
-              <div className="text-center text-sm text-gray-300">{student.section}</div>
-
-              {/* Total Solved */}
-              <div className="w-full p-2 rounded-xl shadow text-center space-y-1 bg-[#2a2a2a]">
-                <div className="text-sm font-semibold text-[#fcd9b8]">
-                  {student.totalSolved ?? 0}
-                </div>
-                <div className="text-[11px] text-gray-400">Solved</div>
-                <div className="grid grid-cols-3 gap-1 text-[10px] text-white font-medium">
-                  <div className="bg-green-500 rounded py-0.5">{student.easySolved ?? 0}</div>
-                  <div className="bg-yellow-500 rounded py-0.5">{student.mediumSolved ?? 0}</div>
-                  <div className="bg-red-500 rounded py-0.5">{student.hardSolved ?? 0}</div>
-                </div>
-              </div>
-
-              {/* Rating */}
-              <div className="text-center space-y-1">
-                <div className="text-[#fcd9b8] font-bold text-lg">{student.rating?.toFixed(2) ?? '-'}</div>
-                <div className="text-xs text-gray-400">Rating</div>
-              </div>
-
-              {/* Global Rank */}
-              <div className="text-center space-y-1">
-                <div className="text-[#fcd9b8] font-medium">#{student.globalRanking ?? '-'}</div>
-                <div className="text-xs text-gray-400">Rank</div>
-              </div>
-
-              {/* Top % */}
-              <div className="text-center space-y-1">
-                <div className="text-[#fcd9b8] font-semibold text-sm">{student.topPercentage ?? '-'}%</div>
-                <div className="text-xs text-gray-400">Top %</div>
-              </div>
+    {/* Leaderboard Cards */}
+    <div className="space-y-4">
+      {data.students.map((student: any, index: number) => (
+        <div
+          key={student.id}
+          className="grid grid-cols-[0.5fr_2fr_1.2fr_1fr_1.5fr_1fr_1fr_1fr] gap-4 items-center px-6 py-4 bg-[#1f1f1f] rounded-xl shadow-md border border-[#f59e0b40]"
+        >
+          <div className="text-center text-sm font-semibold text-gray-300">{index + 1}</div>
+          <div className="flex items-center gap-4 min-w-0">
+            <div className="w-10 h-10 rounded-full bg-[#fcd9b8] text-black font-bold flex items-center justify-center text-sm">
+              {student.name[0]}
             </div>
-          ))}
+            <div className="min-w-0">
+              <div className="font-semibold text-base truncate">{student.name}</div>
+              <div className="text-sm text-gray-400 truncate">@{student.rollNumber}</div>
+            </div>
+          </div>
+          <div className="text-center text-sm text-gray-300 truncate">{student.rollNumber}</div>
+          <div className="text-center text-sm text-gray-300">{student.section}</div>
+          <div className="w-full p-2 rounded-xl shadow text-center space-y-1 bg-[#2a2a2a]">
+            <div className="text-sm font-semibold text-[#fcd9b8]">
+              {student.totalSolved ?? 0}
+            </div>
+            <div className="text-[11px] text-gray-400">Solved</div>
+            <div className="grid grid-cols-3 gap-1 text-[10px] text-white font-medium">
+              <div className="bg-green-500 rounded py-0.5">{student.easySolved ?? 0}</div>
+              <div className="bg-yellow-500 rounded py-0.5">{student.mediumSolved ?? 0}</div>
+              <div className="bg-red-500 rounded py-0.5">{student.hardSolved ?? 0}</div>
+            </div>
+          </div>
+          <div className="text-center space-y-1">
+            <div className="text-[#fcd9b8] font-bold text-lg">{student.rating?.toFixed(2) ?? '-'}</div>
+            <div className="text-xs text-gray-400">Rating</div>
+          </div>
+          <div className="text-center space-y-1">
+            <div className="text-[#fcd9b8] font-medium">#{student.globalRanking ?? '-'}</div>
+            <div className="text-xs text-gray-400">Rank</div>
+          </div>
+          <div className="text-center space-y-1">
+            <div className="text-[#fcd9b8] font-semibold text-sm">{student.topPercentage ?? '-'}%</div>
+            <div className="text-xs text-gray-400">Top %</div>
+          </div>
         </div>
-      )}
+      ))}
+    </div>
+  </div>
+)}
 
-
-
-      {/* Contest Table */}
       {activeTab === 'contests' && (
 
 
