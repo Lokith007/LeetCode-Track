@@ -66,7 +66,7 @@ const ContestLeaderboard = ({ batch, contests  , view  , setView}: ContestLeader
         <select
           value={selectedContest}
           onChange={(e) => setSelectedContest(e.target.value)}
-          className="w-full md:w-auto px-4 py-2 rounded-md bg-[#2a2a2a] text-orange-300 border border-gray-700 focus:outline-none"
+          className="w-full md:w-auto px-4 py-2 rounded-md bg-[#2a2a2a] text-orange-300 border border-gray-700 focus:outline-none "
         >
           {contests.map((contest) => (
             <option key={contest} value={contest}>
