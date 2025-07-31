@@ -187,7 +187,7 @@ const Leaderboard = ({ batch, view, setView }: LeaderboardProps) => {
               {['attended', 'not-attended'].map((tab) => {
                 const isActive = contestTab === tab;
                 const attendedCount = data.students.filter((s: any) =>
-                  s.latestContests.some((c: any) => c.data.available)
+                  s.latestContests.some((c: any) => c.data.attempted)
                 ).length;
                 const notAttendedCount = data.students.length - attendedCount;
 
@@ -213,7 +213,7 @@ const Leaderboard = ({ batch, view, setView }: LeaderboardProps) => {
             {data.students
               .map((student: any) => {
                 const contests = student.latestContests.filter((contest: any) =>
-                  contestTab === 'attended' ? contest.data.available : !contest.data.available
+                  contestTab === 'attended' ? contest.data.attempted : !contest.data.attempted
                 );
                 const latest = contests[0];
                 if (!latest) return null;
