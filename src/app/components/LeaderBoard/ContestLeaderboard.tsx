@@ -66,7 +66,7 @@ const ContestLeaderboard = ({ batch, contests  , view  , setView}: ContestLeader
         <select
           value={selectedContest}
           onChange={(e) => setSelectedContest(e.target.value)}
-          className="w-full md:w-auto px-4 py-2 rounded-md bg-[#2a2a2a] text-orange-300 border border-orange-400 focus:outline-none"
+          className="w-full md:w-auto px-4 py-2 rounded-md bg-[#2a2a2a] text-orange-300 border border-gray-700 focus:outline-none"
         >
           {contests.map((contest) => (
             <option key={contest} value={contest}>
@@ -82,8 +82,8 @@ const ContestLeaderboard = ({ batch, contests  , view  , setView}: ContestLeader
               onClick={() => setViewMode(mode)}
               className={`px-5 py-2 rounded-lg font-semibold border transition-all ${
                 viewMode === mode
-                  ? 'bg-orange-400 text-white scale-105 shadow-md'
-                  : 'bg-transparent text-orange-300 border-orange-400 hover:bg-gray-700'
+                  ? 'bg-[#fcd9b8] text-black'
+                        : 'bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700'
               }`}
             >
               {mode === 'attended'
@@ -106,11 +106,11 @@ const ContestLeaderboard = ({ batch, contests  , view  , setView}: ContestLeader
         {leaderboard.participants.map((user: any) => (
           <div
             key={user.id}
-            className="bg-[#2c2c2c] rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between shadow border border-gray-700 hover:border-orange-300 transition-all"
+            className="bg-[#2c2c2c] rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between shadow border border-[#f59e0b40] hover:border-orange-300 transition-all"
           >
             {/* Left: Avatar + Name */}
             <div className="flex items-center gap-4 w-full sm:w-1/3">
-              <div className="bg-orange-300 text-black font-bold rounded-full w-12 h-12 flex items-center justify-center text-xl">
+              <div className="bg-orange-200 text-black font-bold rounded-full w-12 h-12 flex items-center justify-center text-xl">
                 {user.name?.[0]?.toUpperCase() || '?'}
               </div>
               <div>

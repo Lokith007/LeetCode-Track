@@ -18,15 +18,15 @@ export default function HomePage() {
           🏆 LeetCode Tracker
         </h1>
         <div className="flex items-center gap-4 text-sm">
-          <div className="flex items-center gap-2 text-orange-300">
-            <User className="h-4 w-4" />
+          <div className="flex items-center gap-2 text-gray-200">
+            <User className="h-4 w-4 text-orange-400" />
             <span>{userEmail}</span>
           </div>
           <Button
             onClick={logout}
             variant="outline"
             size="sm"
-            className="bg-[#1a1a1a] border border-orange-400 text-orange-300 hover:bg-gray-700 flex items-center gap-2"
+            className="bg-[#1a1a1a] border border-orange-300 text-orange-300 hover:bg-gray-700 flex items-center gap-2"
           >
             <LogOut className="h-4 w-4 " />
             Logout
