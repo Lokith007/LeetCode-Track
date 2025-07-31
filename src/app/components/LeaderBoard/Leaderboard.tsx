@@ -21,6 +21,8 @@ const GET_STUDENTS = gql`
         title
         data {
           score
+          attempted
+          copied
           rank
           solvedCount
           easySolved
@@ -61,18 +63,18 @@ const Leaderboard = ({ batch, view, setView }: LeaderboardProps) => {
     return <p className="text-center p-8 text-red-500 font-semibold">Error: {error.message}</p>;
 
   const filteredStudents = data.students.filter((student: any) => {
-  const matchesSearch =
-    student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    student.rollNumber.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch =
+      student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      student.rollNumber.toLowerCase().includes(searchQuery.toLowerCase());
 
-  const section = student.section?.toUpperCase() ?? '';
-  const isSDE = SDE_SECTIONS.includes(section);
+    const section = student.section?.toUpperCase() ?? '';
+    const isSDE = SDE_SECTIONS.includes(section);
 
-  if (filter === 'SDE' && !isSDE) return false;
-  if (filter === 'Non-SDE' && isSDE) return false;
+    if (filter === 'SDE' && !isSDE) return false;
+    if (filter === 'Non-SDE' && isSDE) return false;
 
-  return matchesSearch;
-});
+    return matchesSearch;
+  });
 
 
   return (
@@ -83,11 +85,10 @@ const Leaderboard = ({ batch, view, setView }: LeaderboardProps) => {
           <button
             key={tab}
             onClick={() => setActiveTab(tab as 'dashboard' | 'contests')}
-            className={`px-6 py-2 rounded-lg font-semibold transition-all duration-200 shadow-sm border text-sm ${
-              activeTab === tab
+            className={`px-6 py-2 rounded-lg font-semibold transition-all duration-200 shadow-sm border text-sm ${activeTab === tab
                 ? 'bg-[#fcd9b8] text-black'
                 : 'bg-[#1f1f1f] border-gray-700 text-gray-300 hover:bg-gray-700'
-            }`}
+              }`}
           >
             {tab === 'dashboard' ? 'Dashboard' : 'Latest Contest'}
           </button>
@@ -117,11 +118,10 @@ const Leaderboard = ({ batch, view, setView }: LeaderboardProps) => {
                 <button
                   key={type}
                   onClick={() => setFilter(type as 'All' | 'SDE' | 'Non-SDE')}
-                  className={`px-4 py-2 rounded-lg text-sm font-semibold border shadow-sm ${
-                    filter === type
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold border shadow-sm ${filter === type
                       ? 'bg-[#fcd9b8] text-black'
                       : 'bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700'
-                  }`}
+                    }`}
                 >
                   {type}
                 </button>
@@ -134,7 +134,7 @@ const Leaderboard = ({ batch, view, setView }: LeaderboardProps) => {
             {filteredStudents.map((student: any, index: number) => (
               <div
                 key={student.id}
-                className="grid grid-cols-[0.5fr_2fr_1.2fr_1fr_1.5fr_1fr_1fr_1fr] gap-4 items-center px-6 py-4 bg-[#1f1f1f] rounded-xl shadow-md border border-[#f59e0b40]  hover:border-orange-300"
+                className="grid grid-cols-[0.5fr_2fr_1.2fr_1fr_1.5fr_1fr_1fr_1fr] gap-4 items-center px-6 py-4 bg-[#1f1f1f] rounded-xl shadow-md border border-[#f59e0b40]"
               >
                 <div className="text-center text-sm font-semibold text-gray-300">{index + 1}</div>
                 <div className="flex items-center gap-4 min-w-0">
@@ -195,11 +195,10 @@ const Leaderboard = ({ batch, view, setView }: LeaderboardProps) => {
                   <button
                     key={tab}
                     onClick={() => setContestTab(tab as 'attended' | 'not-attended')}
-                    className={`px-5 py-2 rounded-lg font-semibold text-sm border shadow-sm transition-all ${
-                      isActive
+                    className={`px-5 py-2 rounded-lg font-semibold text-sm border shadow-sm transition-all ${isActive
                         ? 'bg-[#fcd9b8] text-black'
                         : 'bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700'
-                    }`}
+                      }`}
                   >
                     {tab === 'attended'
                       ? `Attended (${attendedCount})`
@@ -224,7 +223,7 @@ const Leaderboard = ({ batch, view, setView }: LeaderboardProps) => {
                 return (
                   <div
                     key={student.id}
-                    className="grid grid-cols-[1.5fr_repeat(6,1fr)] gap-4 items-center px-6 py-4 bg-[#1f1f1f] rounded-xl shadow-md border border-[#f59e0b40]  hover:border-orange-300"
+                    className="grid grid-cols-[1.5fr_repeat(7,0.8fr)] gap-4 items-center px-6 py-4 bg-[#1f1f1f] rounded-xl shadow-md border border-[#f59e0b40]"
                   >
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 rounded-full bg-[#fcd9b8] text-black font-bold flex items-center justify-center text-sm">
@@ -250,6 +249,15 @@ const Leaderboard = ({ batch, view, setView }: LeaderboardProps) => {
                       <div className="font-bold text-lg">{latest.data.new_rating?.toFixed(2) ?? '-'}</div>
                       <div className="text-xs text-gray-400">Predicted</div>
                     </div>
+                    <div className="text-center">
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-bold ${latest.data.copied ? 'bg-red-500 text-white' : 'bg-green-500 text-white'
+                          }`}
+                      >
+                        {latest.data.copied ? 'Copied' : 'Original'}
+                      </span>
+                      <div className="text-xs text-gray-400 mt-1">Code</div>
+                    </div>
 
                     <div className="text-center">
                       <div className="text-md font-medium text-[#fcd9b8]">#{student.globalRanking ?? '-'}</div>
@@ -269,9 +277,8 @@ const Leaderboard = ({ batch, view, setView }: LeaderboardProps) => {
                     </div>
 
                     <div
-                      className={`font-semibold text-sm text-center ${
-                        trend === 'UP' ? 'text-green-400' : 'text-red-400'
-                      }`}
+                      className={`font-semibold text-sm text-center ${trend === 'UP' ? 'text-green-400' : 'text-red-400'
+                        }`}
                     >
                       {trend === 'UP' ? '↑ UP' : '↓ DOWN'}
                     </div>
