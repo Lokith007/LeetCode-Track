@@ -55,7 +55,12 @@ const Leaderboard = ({ batch, view, setView }: LeaderboardProps) => {
   const SDE_SECTIONS = ['CSE-L', 'CSE-M', 'CSE-N', 'CSE-O', 'CSE-P', 'CSE-Q'];
 
   if (loading)
-    return <p className="text-center p-8 text-[#fcd9b8] text-lg font-semibold">Loading...</p>;
+  return (
+    <div className="flex justify-center p-8">
+      <div className="w-10 h-10 border-4 border-[#fcd9b8] border-t-transparent rounded-full animate-spin"></div>
+    </div>
+  );
+
 
   if (error)
     return <p className="text-center p-8 text-red-500 font-semibold">Error: {error.message}</p>;

@@ -49,16 +49,20 @@ const LeaderboardPage = ({ params }: { params: Promise<{ batch: string }> }) => 
 
       {/* Main Content */}
       <div className="w-full max-w-7xl mx-auto">
-        {view === 'dashboard' ? (
-          <Leaderboard batch={batch} view={view} setView={setView} />
-        ) : loading ? (
-          <p className="text-center text-[#fcd9b8] text-lg font-medium">Loading contests...</p>
-        ) : error ? (
-          <p className="text-center text-red-500 font-medium">Error fetching contests.</p>
-        ) : (
-          <ContestLeaderboard batch={batch} contests={data.allContests} view={view} setView={setView} />
-        )}
-      </div>
+  {view === 'dashboard' ? (
+    <Leaderboard batch={batch} view={view} setView={setView} />
+  ) : loading ? (
+    <div className="flex flex-col items-center py-10 space-y-2">
+      <div className="w-10 h-10 border-4 border-[#fcd9b8] border-t-transparent rounded-full animate-spin"></div>
+      <p className="text-[#fcd9b8] text-lg font-medium">Loading contests...</p>
+    </div>
+  ) : error ? (
+    <p className="text-center text-red-500 font-medium">Error fetching contests.</p>
+  ) : (
+    <ContestLeaderboard batch={batch} contests={data.allContests} view={view} setView={setView} />
+  )}
+</div>
+
     </div>
   );
 };
