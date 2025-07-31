@@ -134,7 +134,7 @@ const Leaderboard = ({ batch, view, setView }: LeaderboardProps) => {
             {filteredStudents.map((student: any, index: number) => (
               <div
                 key={student.id}
-                className="grid grid-cols-[0.5fr_2fr_1.2fr_1fr_1.5fr_1fr_1fr_1fr] gap-4 items-center px-6 py-4 bg-[#1f1f1f] rounded-xl shadow-md border border-[#f59e0b40]"
+                className="grid grid-cols-[0.5fr_2fr_1.2fr_1fr_1.5fr_1fr_1fr_1fr] gap-4 items-center px-6 py-4 bg-[#1f1f1f] rounded-xl shadow-md border border-[#f59e0b40]  hover:border-orange-300"
               >
                 <div className="text-center text-sm font-semibold text-gray-300">{index + 1}</div>
                 <div className="flex items-center gap-4 min-w-0">
@@ -224,7 +224,7 @@ const Leaderboard = ({ batch, view, setView }: LeaderboardProps) => {
                 return (
                   <div
                     key={student.id}
-                    className="grid grid-cols-[1.5fr_repeat(6,1fr)] gap-4 items-center px-6 py-4 bg-[#1f1f1f] rounded-xl shadow-md border border-[#f59e0b40]"
+                    className="grid grid-cols-[1.5fr_repeat(6,1fr)] gap-4 items-center px-6 py-4 bg-[#1f1f1f] rounded-xl shadow-md border border-[#f59e0b40]  hover:border-orange-300"
                   >
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 rounded-full bg-[#fcd9b8] text-black font-bold flex items-center justify-center text-sm">
