@@ -23,7 +23,7 @@ const LeetCodeSections = ({ params }: { params: Promise<{ batch: string }> }) =>
       const formatted = sectionName.replace(/\s+/g, '-')
       router.push(`/leaderboard/${batch}/${formatted}`)
     } else {
-      router.push(`/leaderboard/${batch}`)
+      router.push(`/leaderboard/${batch}/all`)
     }
   }
 

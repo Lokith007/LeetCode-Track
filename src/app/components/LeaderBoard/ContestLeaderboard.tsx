@@ -34,7 +34,8 @@ type ContestLeaderboardProps = {
   batch: string;
   contests: string[];
   view : string;
-  setView : any;
+  section: string;
+  setView: (view: 'dashboard' | 'contest') => void;
 };
 
 const ContestLeaderboard = ({ batch, contests  , view  , setView}: ContestLeaderboardProps) => {

@@ -41,20 +41,34 @@ const GET_STUDENTS = gql`
 type LeaderboardProps = {
   batch: string;
   view: string;
-  setView: any;
+  section: string;
+  setView: (view: 'dashboard' | 'contest') => void;
+
+
 };
 
-const Leaderboard = ({ batch, view, setView }: LeaderboardProps) => {
+const Leaderboard = ({ batch, view, setView, section }: LeaderboardProps) => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'contests'>('dashboard');
   const [contestTab, setContestTab] = useState<'attended' | 'not-attended'>('attended');
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<'All' | 'SDE' | 'Non-SDE'>('All');
+  const [sortBy, setSortBy] = useState<string>('');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const { data, loading, error } = useQuery(GET_STUDENTS, {
     variables: { batch },
   });
 
   const SDE_SECTIONS = ['CSE-L', 'CSE-M', 'CSE-N', 'CSE-O', 'CSE-P', 'CSE-Q'];
+
+  const handleSort = (field: string) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('desc');
+    }
+  };
 
   if (loading)
     return <p className="text-center p-8 text-[#fcd9b8] text-lg font-semibold">Loading...</p>;
@@ -67,14 +81,20 @@ const Leaderboard = ({ batch, view, setView }: LeaderboardProps) => {
       student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       student.rollNumber.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const section = student.section?.toUpperCase() ?? '';
-    const isSDE = SDE_SECTIONS.includes(section);
+    const studentSection = student.section?.toUpperCase() ?? '';
+    const isSDE = SDE_SECTIONS.includes(studentSection);
 
+    const sectionMatch =
+      !section || section.toLowerCase() === 'all' || studentSection === section.toUpperCase();
+
+    if (!sectionMatch) return false;
     if (filter === 'SDE' && !isSDE) return false;
     if (filter === 'Non-SDE' && isSDE) return false;
 
     return matchesSearch;
   });
+
+
 
 
   return (
@@ -86,8 +106,8 @@ const Leaderboard = ({ batch, view, setView }: LeaderboardProps) => {
             key={tab}
             onClick={() => setActiveTab(tab as 'dashboard' | 'contests')}
             className={`px-6 py-2 rounded-lg font-semibold transition-all duration-200 shadow-sm border text-sm ${activeTab === tab
-                ? 'bg-[#fcd9b8] text-black'
-                : 'bg-[#1f1f1f] border-gray-700 text-gray-300 hover:bg-gray-700'
+              ? 'bg-[#fcd9b8] text-black'
+              : 'bg-[#1f1f1f] border-gray-700 text-gray-300 hover:bg-gray-700'
               }`}
           >
             {tab === 'dashboard' ? 'Dashboard' : 'Latest Contest'}
@@ -119,8 +139,8 @@ const Leaderboard = ({ batch, view, setView }: LeaderboardProps) => {
                   key={type}
                   onClick={() => setFilter(type as 'All' | 'SDE' | 'Non-SDE')}
                   className={`px-4 py-2 rounded-lg text-sm font-semibold border shadow-sm ${filter === type
-                      ? 'bg-[#fcd9b8] text-black'
-                      : 'bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700'
+                    ? 'bg-[#fcd9b8] text-black'
+                    : 'bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700'
                     }`}
                 >
                   {type}
@@ -179,10 +199,31 @@ const Leaderboard = ({ batch, view, setView }: LeaderboardProps) => {
 
       {activeTab === 'contests' && (
         <div className="space-y-6">
-          <div className="flex items-center justify-between gap-4">
+          {/* Contest Title and Filter Controls */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <h1 className="text-xl text-[#fcd9b8] font-bold">
               {data.students[0].latestContests[0].title}
             </h1>
+
+            {/* Filter Options */}
+            <div className="flex gap-2">
+              {['All', 'SDE', 'Non-SDE'].map((type) => (
+                <button
+                  key={type}
+                  onClick={() => setFilter(type as 'All' | 'SDE' | 'Non-SDE')}
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold border shadow-sm ${filter === type
+                    ? 'bg-[#fcd9b8] text-black'
+                    : 'bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700'
+                    }`}
+                >
+                  {type}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Contest Tab Controls */}
+          <div className="flex items-center justify-end gap-4">
             <div className="flex gap-2">
               {['attended', 'not-attended'].map((tab) => {
                 const isActive = contestTab === tab;
@@ -196,8 +237,8 @@ const Leaderboard = ({ batch, view, setView }: LeaderboardProps) => {
                     key={tab}
                     onClick={() => setContestTab(tab as 'attended' | 'not-attended')}
                     className={`px-5 py-2 rounded-lg font-semibold text-sm border shadow-sm transition-all ${isActive
-                        ? 'bg-[#fcd9b8] text-black'
-                        : 'bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700'
+                      ? 'bg-[#fcd9b8] text-black'
+                      : 'bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700'
                       }`}
                   >
                     {tab === 'attended'
@@ -209,8 +250,59 @@ const Leaderboard = ({ batch, view, setView }: LeaderboardProps) => {
             </div>
           </div>
 
+          {/* Table Headers */}
+          <div className="grid grid-cols-[1.5fr_repeat(7,0.8fr)] gap-4 items-center px-6 py-3 bg-[#2a2a2a] rounded-xl shadow-md border border-[#f59e0b40] text-sm font-semibold text-gray-300">
+            <div>Name</div>
+            <div
+              className="cursor-pointer hover:text-[#fcd9b8] transition-colors text-center"
+              onClick={() => handleSort('score')}
+            >
+              Score {sortBy === 'score' && (sortOrder === 'asc' ? '↑' : '↓')}
+            </div>
+            <div
+              className="cursor-pointer hover:text-[#fcd9b8] transition-colors text-center"
+              onClick={() => handleSort('oldRating')}
+            >
+              Old Rating {sortBy === 'oldRating' && (sortOrder === 'asc' ? '↑' : '↓')}
+            </div>
+            <div
+              className="cursor-pointer hover:text-[#fcd9b8] transition-colors text-center"
+              onClick={() => handleSort('newRating')}
+            >
+              Predicted {sortBy === 'newRating' && (sortOrder === 'asc' ? '↑' : '↓')}
+            </div>
+            <div
+              className="cursor-pointer hover:text-[#fcd9b8] transition-colors text-center"
+              onClick={() => handleSort('copied')}
+            >
+              Code {sortBy === 'copied' && (sortOrder === 'asc' ? '↑' : '↓')}
+            </div>
+            <div
+              className="cursor-pointer hover:text-[#fcd9b8] transition-colors text-center"
+              onClick={() => handleSort('globalRanking')}
+            >
+              Rank {sortBy === 'globalRanking' && (sortOrder === 'asc' ? '↑' : '↓')}
+            </div>
+            <div className="text-center">Solved</div>
+            <div className="text-center">Trend</div>
+          </div>
+
           <div className="space-y-4">
             {data.students
+              .filter((student: any) => {
+                const studentSection = student.section?.toUpperCase() ?? '';
+                const isSDE = SDE_SECTIONS.includes(studentSection);
+              
+                const sectionMatch = !section || section.toLowerCase() === 'all' || studentSection === section.toUpperCase();
+              
+                if (!sectionMatch) return false;
+                if (filter === 'SDE' && !isSDE) return false;
+                if (filter === 'Non-SDE' && isSDE) return false;
+              
+                return true;
+              })
+              
+              
               .map((student: any) => {
                 const contests = student.latestContests.filter((contest: any) =>
                   contestTab === 'attended' ? contest.data.attempted : !contest.data.attempted
@@ -219,6 +311,37 @@ const Leaderboard = ({ batch, view, setView }: LeaderboardProps) => {
                 if (!latest) return null;
 
                 const trend = latest.data.new_rating > latest.data.old_rating ? 'UP' : 'DOWN';
+
+                return {
+                  student,
+                  latest,
+                  trend,
+                  copied: latest.data.copied,
+                  score: latest.data.score,
+                  oldRating: latest.data.old_rating,
+                  newRating: latest.data.new_rating,
+                  solvedCount: latest.data.solvedCount,
+                  globalRanking: student.globalRanking
+                };
+              })
+              .filter(Boolean)
+              .sort((a: any, b: any) => {
+                if (!sortBy) return 0;
+
+                let aValue = a[sortBy];
+                let bValue = b[sortBy];
+
+                if (sortBy === 'copied') {
+                  aValue = aValue ? 1 : 0;
+                  bValue = bValue ? 1 : 0;
+                }
+
+                if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
+                if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
+                return 0;
+              })
+              .map((item: any, index: number) => {
+                const { student, latest, trend } = item;
 
                 return (
                   <div
