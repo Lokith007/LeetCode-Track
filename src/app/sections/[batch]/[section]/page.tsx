@@ -1,35 +1,35 @@
-'use client'
+"use client"
 
-import { useRouter } from 'next/navigation'
-import { GraduationCap, Users } from 'lucide-react'
-import { Card } from '@/components/ui/card'
-import CsvUploader from '@/app/components/csvParser/csvParser'
-import { use } from 'react'
+import { GraduationCap, Users } from "lucide-react"
+import { Card } from "@/components/ui/card"
+import CsvUploader from "@/app/components/csvParser/csvParser"
+import { use } from "react"
+import { useRouter } from "next/navigation"
 
-const cseSections = Array.from({ length: 17 }, (_, i) => ({
-  name: `CSE ${String.fromCharCode(65 + i)}`, // CSE A → CSE Q
-}))
+const LeetCodeSections = ({
+  params,
+}: {
+  params: Promise<{ batch: string; section: string }>;
+}) => {
+  const { batch, section } = use(params);
+  const router = useRouter() // ✅ hook from App Router
 
-const LeetCodeSections = ({ params }: { params: Promise<{ batch: string }> }) => {
-  const router = useRouter()
-  const { batch } = use(params);
+
+  const cseSections = Array.from({ length: parseInt(section) }, (_, i) => ({
+    name: `CSE ${String.fromCharCode(65 + i)}`,
+  }))
+console.log(cseSections);
 
   const handleSectionClick = (sectionName?: string) => {
-    const currentPath = window.location.pathname
-    const batchMatch = currentPath.match(/\/leaderboard\/([^\/]+)/)
-    const batch = batchMatch ? batchMatch[1] : 'batch24-28'
-
-    if (sectionName) {
-      const formatted = sectionName.replace(/\s+/g, '-')
-      router.push(`/leaderboard/${batch}/${formatted}`)
-    } else {
-      router.push(`/leaderboard/${batch}/all`)
-    }
+    const formatted = sectionName
+      ? sectionName.replace(/\s+/g, "-")
+      : "all"
+    router.push(`/leaderboard/${batch}/${formatted}`)
   }
 
   const isSDESection = (name: string) => {
-    const suffix = name.split(' ')[1]
-    return ['L', 'M', 'N', 'O', 'P', 'Q'].includes(suffix)
+    const suffix = name.split(" ")[1]
+    return ["L", "M", "N", "O", "P", "Q"].includes(suffix)
   }
 
   return (
@@ -42,7 +42,6 @@ const LeetCodeSections = ({ params }: { params: Promise<{ batch: string }> }) =>
           Click on a section to explore its leaderboard
         </p>
       </div>
-
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
         {/* All Sections Card */}
@@ -63,7 +62,7 @@ const LeetCodeSections = ({ params }: { params: Promise<{ batch: string }> }) =>
           </div>
         </Card>
 
-        {/* Individual CSE Sections */}
+        {/* Generated Sections */}
         {cseSections.map((section) => (
           <Card
             key={section.name}
@@ -89,11 +88,10 @@ const LeetCodeSections = ({ params }: { params: Promise<{ batch: string }> }) =>
           </Card>
         ))}
       </div>
-      <div className='absolute right-5 bottom-5'>
 
-      <CsvUploader batch={batch} />
+      <div className="absolute right-5 bottom-5">
+        <CsvUploader batch={batch} />
       </div>
-
     </div>
   )
 }

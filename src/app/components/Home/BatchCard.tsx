@@ -6,18 +6,17 @@ import { Users, Trophy, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 type BatchCardProps = {
-  batch: {
-    name: string
-    displayName: string
-  }
+  batch:  string
+  secCount : number
+ 
 }
 
-export default function BatchCard({ batch }: BatchCardProps) {
+export default function BatchCard({ batch , secCount }: BatchCardProps) {
   const router = useRouter()
 
   return (
     <Card
-      onClick={() => router.push(`/sections/${batch.name}`)}
+      onClick={() => router.push(`/sections/${batch}/${secCount}`)}
       className="cursor-pointer transition-all duration-300 p-4 bg-[#1e1e1e] border border-orange-300 shadow-md rounded-2xl hover:shadow-lg hover:scale-105 hover:border-orange-300 hover:ring-2 hover:ring-orange-200 group"
     >
       <CardContent className="relative">
@@ -28,7 +27,7 @@ export default function BatchCard({ batch }: BatchCardProps) {
           <ArrowRight className="h-5 w-5 text-orange-300 group-hover:text-orange-200 group-hover:translate-x-1 transition-all duration-300" />
         </div>
         <h2 className="text-xl font-bold text-gray-200 group-hover:text-orange-200 transition-colors mb-2">
-          {batch.displayName}
+          {batch}
         </h2>
         <Button
           variant="ghost"

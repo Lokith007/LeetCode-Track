@@ -35,9 +35,9 @@ const LeaderboardPage = ({
             setView={setView}
           />
         ) : loading ? (
-          <p className="text-center text-[#fcd9b8] text-lg font-medium">
-            Loading contests...
-          </p>
+          <div className="mt-6 flex justify-center">
+    <div className="w-8 h-8 border-4 border-orange-400 border-t-transparent rounded-full animate-spin"></div>
+  </div>
         ) : error ? (
           <p className="text-center text-red-500 font-medium">
             Error fetching contests.

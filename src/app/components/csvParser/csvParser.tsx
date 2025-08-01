@@ -140,7 +140,9 @@ export default function CsvUploader({ batch }: { batch: string }) {
         </div>
       )}
 
-      {loading && <p className="text-sm text-blue-600 mt-4">Uploading...</p>}
+      {loading && <div className="mt-6 flex justify-center">
+    <div className="w-8 h-8 border-4 border-orange-400 border-t-transparent rounded-full animate-spin"></div>
+  </div>}
       {error && <p className="text-sm text-red-600 mt-4">Upload failed. Please try again.</p>}
     </div>
   );

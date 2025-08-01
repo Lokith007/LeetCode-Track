@@ -2,14 +2,26 @@
 
 import AddBatchCard from "./components/Home/AddBatchCard"
 import BatchCard from "./components/Home/BatchCard"
-import { batches } from "./data/data"
 import { Button } from "@/components/ui/button"
 import { LogOut, User } from "lucide-react"
 import { useAuth } from "./components/AuthProvider"
+import { gql, useQuery } from "@apollo/client"
+
+// GraphQL query
+const GET_ALL_BATCHES = gql`
+  query GetAllBatches {
+    allBatches {
+      name
+      secCount
+    }
+  }
+`
 
 export default function HomePage() {
   const { userEmail, logout } = useAuth()
-
+  const { data, loading, error } = useQuery(GET_ALL_BATCHES)
+  console.log(data?.allBatches[0].secCount);
+  
   return (
     <main className="min-h-screen flex flex-col items-center justify-start bg-[#121212] text-orange-400 py-12 px-4 font-sans">
       {/* Header with user info and logout */}
@@ -37,8 +49,10 @@ export default function HomePage() {
       {/* Batch Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 w-full max-w-6xl">
         <AddBatchCard />
-        {batches.map((batch) => (
-          <BatchCard key={batch.name} batch={batch} />
+        {loading && <p className="text-gray-400">Loading batches...</p>}
+        {error && <p className="text-red-400">Error loading batches 😢</p>}
+        {data?.allBatches?.map((batch: { name: string; secCount?: number }) => (
+          <BatchCard key={batch.name} batch={batch.name} secCount={batch.secCount} />
         ))}
       </div>
     </main>

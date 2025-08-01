@@ -97,7 +97,9 @@ const ContestLeaderboard = ({ batch, contests  , view  , setView}: ContestLeader
 
       {/* Loading / Error / No Data */}
       {loading ? (
-        <p className="text-center text-orange-400 font-medium text-lg">Loading leaderboard...</p>
+        <div className="mt-6 flex justify-center">
+        <div className="w-8 h-8 border-4 border-orange-400 border-t-transparent rounded-full animate-spin"></div>
+      </div>
       ) : error ? (
         <p className="text-center text-red-500 font-semibold">Error: {error.message}</p>
       ) : !leaderboard ? (

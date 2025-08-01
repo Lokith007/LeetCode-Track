@@ -71,7 +71,9 @@ const Leaderboard = ({ batch, view, setView, section }: LeaderboardProps) => {
   };
 
   if (loading)
-    return <p className="text-center p-8 text-[#fcd9b8] text-lg font-semibold">Loading...</p>;
+    return <div className="mt-6 flex justify-center">
+  <div className="w-8 h-8 border-4 border-orange-400 border-t-transparent rounded-full animate-spin"></div>
+</div>;
 
   if (error)
     return <p className="text-center p-8 text-red-500 font-semibold">Error: {error.message}</p>;
