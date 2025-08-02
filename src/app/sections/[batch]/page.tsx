@@ -34,15 +34,31 @@ const LeetCodeSections = ({ params }: { params: Promise<{ batch: string }> }) =>
 
   return (
     <div className="min-h-screen bg-[#121212] text-gray-300 py-12 px-4 sm:px-6 lg:px-12 space-y-10">
-      <div className="text-center space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight text-orange-400">
-          CSE Sections
-        </h2>
-        <p className="text-sm text-gray-400">
-          Click on a section to explore its leaderboard
-        </p>
-      </div>
+      <div className="flex items-center justify-between">
+        {/* Left button */}
+        <button
+          onClick={() => router.push("/")}
+          className="px-6 py-2 rounded-lg font-semibold transition-all duration-200 shadow-sm border text-sm
+              bg-[#1f1f1f] border-gray-700 text-gray-300 hover:bg-gray-700"
+        >
+          {"<-"}
+        </button>
 
+        {/* Center title */}
+        <div className="flex-1 text-center">
+          <h2 className="text-3xl font-bold tracking-tight text-orange-400">
+            CSE Sections
+          </h2>
+          <p className="text-sm text-gray-400">
+            Click on a section to explore its leaderboard
+          </p>
+        </div>
+
+        {/* To keep the title exactly centered, add an invisible placeholder */}
+        <div className="w-[90px]">
+          {/* same width as button for symmetry */}
+        </div>
+      </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
         {/* All Sections Card */}
@@ -89,13 +105,11 @@ const LeetCodeSections = ({ params }: { params: Promise<{ batch: string }> }) =>
           </Card>
         ))}
       </div>
-      <div className='absolute right-5 bottom-5'>
-
-      <CsvUploader batch={batch} />
+      <div className="absolute right-5 bottom-5">
+        <CsvUploader batch={batch} />
       </div>
-
     </div>
-  )
+  );
 }
 
 export default LeetCodeSections
