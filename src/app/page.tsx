@@ -51,7 +51,7 @@ export default function HomePage() {
         <AddBatchCard />
         {loading && <p className="text-gray-400">Loading batches...</p>}
         {error && <p className="text-red-400">Error loading batches 😢</p>}
-        {data?.allBatches?.map((batch: { name: string; secCount?: number }) => (
+        {data?.allBatches?.map((batch: { name: string; secCount: number }) => (
           <BatchCard key={batch.name} batch={batch.name} secCount={batch.secCount} />
         ))}
       </div>

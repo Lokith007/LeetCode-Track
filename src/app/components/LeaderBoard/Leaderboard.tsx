@@ -72,8 +72,8 @@ const Leaderboard = ({ batch, view, setView, section }: LeaderboardProps) => {
 
   if (loading)
     return <div className="mt-6 flex justify-center">
-  <div className="w-8 h-8 border-4 border-orange-400 border-t-transparent rounded-full animate-spin"></div>
-</div>;
+      <div className="w-8 h-8 border-4 border-orange-400 border-t-transparent rounded-full animate-spin"></div>
+    </div>;
 
   if (error)
     return <p className="text-center p-8 text-red-500 font-semibold">Error: {error.message}</p>;
@@ -294,21 +294,24 @@ const Leaderboard = ({ batch, view, setView, section }: LeaderboardProps) => {
               .filter((student: any) => {
                 const studentSection = student.section?.toUpperCase() ?? '';
                 const isSDE = SDE_SECTIONS.includes(studentSection);
-              
+
                 const sectionMatch = !section || section.toLowerCase() === 'all' || studentSection === section.toUpperCase();
-              
+
                 if (!sectionMatch) return false;
                 if (filter === 'SDE' && !isSDE) return false;
                 if (filter === 'Non-SDE' && isSDE) return false;
-              
+
                 return true;
               })
-              
-              
+
+
               .map((student: any) => {
                 const contests = student.latestContests.filter((contest: any) =>
-                  contestTab === 'attended' ? contest.data.attempted : !contest.data.attempted
+                  contestTab === 'attended'
+                    ? contest.data.attempted || contest.data.available
+                    : !contest.data.attempted && !contest.data.available
                 );
+
                 const latest = contests[0];
                 if (!latest) return null;
 
@@ -376,11 +379,20 @@ const Leaderboard = ({ batch, view, setView, section }: LeaderboardProps) => {
                     </div>
                     <div className="text-center">
                       <span
-                        className={`px-2 py-1 rounded-full text-xs font-bold ${latest.data.copied ? 'bg-red-500 text-white' : 'bg-green-500 text-white'
+                        className={`px-2 py-1 rounded-full text-xs font-bold ${latest.data.attempted
+                            ? latest.data.copied
+                              ? 'bg-red-500 text-white'
+                              : 'bg-green-500 text-white'
+                            : 'bg-gray-500 text-white'
                           }`}
                       >
-                        {latest.data.copied ? 'Copied' : 'Original'}
+                        {latest.data.attempted
+                          ? latest.data.copied
+                            ? 'Copied'
+                            : 'Original'
+                          : 'Unknown'}
                       </span>
+
                       <div className="text-xs text-gray-400 mt-1">Code</div>
                     </div>
 

@@ -1,5 +1,4 @@
 "use client"
-
 import { GraduationCap, Users } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import CsvUploader from "@/app/components/csvParser/csvParser"
