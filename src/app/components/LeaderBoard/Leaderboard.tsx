@@ -1,6 +1,7 @@
 'use client';
 import { gql, useQuery } from '@apollo/client';
 import { useState } from 'react';
+import * as XLSX from 'xlsx';
 
 interface Student {
   id: string;
@@ -97,6 +98,53 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
       setSortBy(field);
       setSortOrder('desc');
     }
+  };
+const exportLatestContestData = () => {
+    const exportData = data.students
+      .filter((student: Student) => {
+        const studentSection = student.section?.toUpperCase() ?? '';
+        const isSDE = SDE_SECTIONS.includes(studentSection);
+
+        const sectionMatch =
+          !section || section.toLowerCase() === 'all' || studentSection === section.toUpperCase();
+        if (!sectionMatch) return false;
+        if (filter === 'SDE' && !isSDE) return false;
+        if (filter === 'Non-SDE' && isSDE) return false;
+        return true;
+      })
+      .map((student: Student) => {
+        const contests = student.latestContests.filter((contest) =>
+          contestTab === 'attended'
+            ? contest.data.attempted || contest.data.available
+            : !contest.data.attempted && !contest.data.available
+        );
+        const latest = contests[0];
+        if (!latest) return null;
+
+        const trend = latest.data.new_rating > latest.data.old_rating ? 'UP' : 'DOWN';
+
+        return {
+          Name: student.name,
+          RollNumber: student.rollNumber,
+          Section: student.section,
+          Score: latest.data.score,
+          OldRating: latest.data.old_rating,
+          NewRating: latest.data.new_rating,
+          Copied: latest.data.copied ? 'Yes' : 'No',
+          Rank: student.globalRanking,
+          Solved: latest.data.solvedCount,
+          EasySolved: latest.data.easySolved,
+          MediumSolved: latest.data.mediumSolved,
+          HardSolved: latest.data.hardSolved,
+          Trend: trend,
+        };
+      })
+      .filter(Boolean);
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'LatestContest');
+    XLSX.writeFile(workbook, 'LatestContestLeaderboard.xlsx');
   };
 
   if (loading)
@@ -230,11 +278,19 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
 
       {activeTab === 'contests' && (
         <div className="space-y-6">
-          {/* Contest Title and Filter Controls */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <h1 className="text-xl text-[#fcd9b8] font-bold">
-              {data.students[0].latestContests[0].title}
-            </h1>
+           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+  <h1 className="text-xl text-[#fcd9b8] font-bold">
+    {data.students[0]?.latestContests?.[0]?.title ?? 'Latest Contest'}
+  </h1>
+  <button
+    onClick={exportLatestContestData}
+    className="px-4 py-2 rounded-lg text-sm font-semibold text-gray-300 border border-gray-700 hover:bg-gray-700"
+  >
+    Export to Excel
+  </button>
+</div>
+
 
             {/* Filter Options */}
             <div className="flex gap-2">
