@@ -31,7 +31,6 @@ const LeaderboardPage = ({
           <Leaderboard
             batch={batch}
             section={section}
-            view={view}
             setView={setView}
           />
         ) : loading ? (
@@ -47,7 +46,6 @@ const LeaderboardPage = ({
             batch={batch}
             section={section}
             contests={data.allContests}
-            view={view}
             setView={setView}
           />
         )}

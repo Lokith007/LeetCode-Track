@@ -2,6 +2,38 @@
 import { gql, useQuery } from '@apollo/client';
 import { useState } from 'react';
 
+interface Student {
+  id: string;
+  name: string;
+  rollNumber: string;
+  totalSolved: number;
+  easySolved: number;
+  mediumSolved: number;
+  hardSolved: number;
+  rating: number;
+  globalRanking: number;
+  topPercentage: number;
+  section: string;
+  attendedContestsCount: number;
+  latestContests: Array<{
+    title: string;
+    data: {
+      score: number;
+      attempted: boolean;
+      copied: boolean;
+      rank: number;
+      solvedCount: number;
+      easySolved: number;
+      mediumSolved: number;
+      hardSolved: number;
+      available: boolean;
+      new_rating: number;
+      old_rating: number;
+      savedAt: string;
+    };
+  }>;
+}
+
 const GET_STUDENTS = gql`
   query GetStudents($batch: String!) {
     students(batch: $batch) {
@@ -40,14 +72,11 @@ const GET_STUDENTS = gql`
 
 type LeaderboardProps = {
   batch: string;
-  view: string;
   section: string;
   setView: (view: 'dashboard' | 'contest') => void;
-
-
 };
 
-const Leaderboard = ({ batch, view, setView, section }: LeaderboardProps) => {
+const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'contests'>('dashboard');
   const [contestTab, setContestTab] = useState<'attended' | 'not-attended'>('attended');
   const [searchQuery, setSearchQuery] = useState('');
@@ -78,7 +107,7 @@ const Leaderboard = ({ batch, view, setView, section }: LeaderboardProps) => {
   if (error)
     return <p className="text-center p-8 text-red-500 font-semibold">Error: {error.message}</p>;
 
-  const filteredStudents = data.students.filter((student: any) => {
+  const filteredStudents = data.students.filter((student: Student) => {
     const matchesSearch =
       student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       student.rollNumber.toLowerCase().includes(searchQuery.toLowerCase());
@@ -153,7 +182,7 @@ const Leaderboard = ({ batch, view, setView, section }: LeaderboardProps) => {
 
           {/* Leaderboard Cards */}
           <div className="space-y-4">
-            {filteredStudents.map((student: any, index: number) => (
+            {filteredStudents.map((student: Student, index: number) => (
               <div
                 key={student.id}
                 className="grid grid-cols-[0.5fr_2fr_1.2fr_1fr_1.5fr_1fr_1fr_1fr] gap-4 items-center px-6 py-4 bg-[#1f1f1f] rounded-xl shadow-md border border-[#f59e0b40]"
@@ -229,8 +258,8 @@ const Leaderboard = ({ batch, view, setView, section }: LeaderboardProps) => {
             <div className="flex gap-2">
               {['attended', 'not-attended'].map((tab) => {
                 const isActive = contestTab === tab;
-                const attendedCount = data.students.filter((s: any) =>
-                  s.latestContests.some((c: any) => c.data.attempted)
+                const attendedCount = data.students.filter((s: Student) =>
+                  s.latestContests.some((c) => c.data.attempted)
                 ).length;
                 const notAttendedCount = data.students.length - attendedCount;
 
@@ -291,7 +320,7 @@ const Leaderboard = ({ batch, view, setView, section }: LeaderboardProps) => {
 
           <div className="space-y-4">
             {data.students
-              .filter((student: any) => {
+              .filter((student: Student) => {
                 const studentSection = student.section?.toUpperCase() ?? '';
                 const isSDE = SDE_SECTIONS.includes(studentSection);
 
@@ -305,8 +334,8 @@ const Leaderboard = ({ batch, view, setView, section }: LeaderboardProps) => {
               })
 
 
-              .map((student: any) => {
-                const contests = student.latestContests.filter((contest: any) =>
+              .map((student: Student) => {
+                const contests = student.latestContests.filter((contest) =>
                   contestTab === 'attended'
                     ? contest.data.attempted || contest.data.available
                     : !contest.data.attempted && !contest.data.available
@@ -330,7 +359,7 @@ const Leaderboard = ({ batch, view, setView, section }: LeaderboardProps) => {
                 };
               })
               .filter(Boolean)
-              .sort((a: any, b: any) => {
+              .sort((a: { [key: string]: number | boolean | Student }, b: { [key: string]: number | boolean | Student }) => {
                 if (!sortBy) return 0;
 
                 let aValue = a[sortBy];
@@ -341,11 +370,13 @@ const Leaderboard = ({ batch, view, setView, section }: LeaderboardProps) => {
                   bValue = bValue ? 1 : 0;
                 }
 
-                if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
-                if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
+                if (typeof aValue === 'number' && typeof bValue === 'number') {
+                  if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
+                  if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
+                }
                 return 0;
               })
-              .map((item: any, index: number) => {
+              .map((item: { student: Student; latest: Student['latestContests'][0]; trend: string }) => {
                 const { student, latest, trend } = item;
 
                 return (

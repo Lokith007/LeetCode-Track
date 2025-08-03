@@ -33,12 +33,11 @@ const GET_CONTEST_STATUS_LEADERBOARD = gql`
 type ContestLeaderboardProps = {
   batch: string;
   contests: string[];
-  view : string;
   section: string;
   setView: (view: 'dashboard' | 'contest') => void;
 };
 
-const ContestLeaderboard = ({ batch, contests  , view  , setView}: ContestLeaderboardProps) => {
+const ContestLeaderboard = ({ batch, contests, setView}: ContestLeaderboardProps) => {
   const [selectedContest, setSelectedContest] = useState(contests[0]);
   const [viewMode, setViewMode] = useState<'attended' | 'notAttended'>('attended');
 
@@ -106,7 +105,7 @@ const ContestLeaderboard = ({ batch, contests  , view  , setView}: ContestLeader
         <p className="text-center text-gray-400">No data available.</p>
       ) : viewMode === 'attended' ? (
         <div className="space-y-4">
-        {leaderboard.participants.map((user: any) => (
+        {leaderboard.participants.map((user: { id: string; name: string; leetcodeUsername: string; rating: number; contestRanking: number; contest: { problemsSolved: number; totalProblems: number; trendDirection: string } }) => (
           <div
             key={user.id}
             className="bg-[#2c2c2c] rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between shadow border border-[#f59e0b40] hover:border-orange-300 transition-all"
@@ -162,7 +161,7 @@ const ContestLeaderboard = ({ batch, contests  , view  , setView}: ContestLeader
               </tr>
             </thead>
             <tbody>
-              {leaderboard.nonParticipants.map((user: any, index: number) => (
+              {leaderboard.nonParticipants.map((user: { id: string; name: string; leetcodeUsername: string; rating: number }, index: number) => (
                 <tr
                   key={user.id}
                   className={`transition-all hover:bg-gray-700 ${

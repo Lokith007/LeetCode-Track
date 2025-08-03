@@ -24,6 +24,48 @@ export default function CsvUploader({ batch }: { batch: string }) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploadStudents, { loading, error }] = useMutation(UPLOAD_STUDENTS);
 
+  const clean = (value?: string): string => {
+    if (!value) return '';
+    return value
+      .trim()
+      .replace(/^"(.*)"$/g, '$1')
+      .replace(/[^a-zA-Z0-9\s_-]/g, '')
+      .trim();
+  };
+
+  const parseCSV = useCallback((file: File) => {
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      transformHeader: (header: string) => header.trim().toLowerCase(),
+      complete: async function (results: Papa.ParseResult<Record<string, string>>) {
+        const students: Student[] = results.data
+          .map((row: Record<string, string>) => ({
+            username: clean(row['username']),
+            realname: clean(row['realname']),
+            rollnumber: clean(row['roll number']),
+            section: clean(row['section']),
+          }))
+          .filter((s: Student) => s.username || s.realname || s.rollnumber || s.section);
+
+        console.log('Parsed students:', students);
+
+        try {
+          const res = await uploadStudents({
+            variables: {
+              batch: batch,
+              students,
+            },
+          });
+          console.log('Upload success:', res.data.uploadStudents);
+          alert('CSV uploaded successfully!');
+        } catch (err) {
+          console.error('Upload failed:', err);
+          alert('Failed to upload students.');
+        }
+      },
+    });
+  }, [uploadStudents, batch]);
 
   const handleButtonClick = () => {
     setShowModal(true);
@@ -44,50 +86,7 @@ export default function CsvUploader({ batch }: { batch: string }) {
       Array.from(e.dataTransfer.files).forEach(parseCSV);
       setShowModal(false);
     }
-  }, []);
-
-  const parseCSV = (file: File) => {
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      transformHeader: (header: string) => header.trim().toLowerCase(),
-      complete: async function (results: Papa.ParseResult<Record<string, string>>) {
-        const students: Student[] = results.data
-          .map((row) => ({
-            username: clean(row['username']),
-            realname: clean(row['realname']),
-            rollnumber: clean(row['roll number']),
-            section: clean(row['section']),
-          }))
-          .filter((s) => s.username || s.realname || s.rollnumber || s.section);
-
-        console.log('Parsed students:', students);
-
-        try {
-          const res = await uploadStudents({
-            variables: {
-              batch: batch,
-              students,
-            },
-          });
-          console.log('Upload success:', res.data.uploadStudents);
-          alert('CSV uploaded successfully!');
-        } catch (err) {
-          console.error('Upload failed:', err);
-          alert('Failed to upload students.');
-        }
-      },
-    });
-  };
-
-  const clean = (value?: string): string => {
-    if (!value) return '';
-    return value
-      .trim()
-      .replace(/^"(.*)"$/g, '$1')
-      .replace(/[^a-zA-Z0-9\s_-]/g, '')
-      .trim();
-  };
+  }, [parseCSV]);
 
   return (
     <div className="p-6 rounded-lg shadow-md max-w-md mx-auto mt-10 text-center">
