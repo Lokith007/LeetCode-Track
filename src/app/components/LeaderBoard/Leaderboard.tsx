@@ -91,6 +91,95 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
 
   const SDE_SECTIONS = ['CSE-L', 'CSE-M', 'CSE-N', 'CSE-O', 'CSE-P', 'CSE-Q'];
 
+  // Export function for contest data
+  const exportToCSV = () => {
+    const filteredData = data.students
+      .filter((student: Student) => {
+        const studentSection = student.section?.toUpperCase() ?? '';
+        const isSDE = SDE_SECTIONS.includes(studentSection);
+        const sectionMatch = !section || section.toLowerCase() === 'all' || studentSection === section.toUpperCase();
+
+        if (!sectionMatch) return false;
+        if (filter === 'SDE' && !isSDE) return false;
+        if (filter === 'Non-SDE' && isSDE) return false;
+        return true;
+      })
+      .map((student: Student) => {
+        const contests = student.latestContests.filter((contest) =>
+          contestTab === 'attended'
+            ? contest.data.attempted || contest.data.available
+            : !contest.data.attempted && !contest.data.available
+        );
+        const latest = contests[0];
+        return { student, latest };
+      })
+      .filter((item: { student: Student; latest: Student['latestContests'][0] }) => item.latest);
+
+    const csvData = filteredData.map((item: { student: Student; latest: Student['latestContests'][0] }, index: number) => ({
+      'S.No': index + 1,
+      'Name': item.student.name,
+      'Roll Number': item.student.rollNumber,
+      'Section': item.student.section,
+      'Score': item.latest?.data.score || '-',
+      'Attempted': item.latest?.data.attempted ? 'Yes' : 'No',
+      'Available': item.latest?.data.available ? 'Yes' : 'No',
+      'Problems Solved': item.latest?.data.solvedCount || 0,
+      'Old Rating': item.latest?.data.old_rating || 0,
+      'New Rating': item.latest?.data.new_rating || 0,
+      'Copied': item.latest?.data.copied ? 'Yes' : 'No',
+      'Global Ranking': item.student.globalRanking || '-',
+      'Total Solved': item.student.totalSolved || 0,
+    }));
+
+    const csvContent = [
+      Object.keys(csvData[0] || {}).join(','),
+      ...csvData.map((row: Record<string, string | number>) => Object.values(row).map((val: string | number) => `"${val}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `leaderboard_${contestTab}_${batch}_${section}_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Export function for dashboard data
+  const exportDashboardToCSV = () => {
+    const csvData = filteredStudents.map((student: Student, index: number) => ({
+      'S.No': index + 1,
+      'Name': student.name,
+      'Roll Number': student.rollNumber,
+      'Section': student.section,
+      'Total Solved': student.totalSolved || 0,
+      'Easy Solved': student.easySolved || 0,
+      'Medium Solved': student.mediumSolved || 0,
+      'Hard Solved': student.hardSolved || 0,
+      'Rating': student.rating || 0,
+      'Global Ranking': student.globalRanking || '-',
+      'Top Percentage': student.topPercentage || '-',
+      'Contests Attended': student.attendedContestsCount || 0,
+    }));
+
+    const csvContent = [
+      Object.keys(csvData[0] || {}).join(','),
+      ...csvData.map((row: Record<string, string | number>) => Object.values(row).map((val: string | number) => `"${val}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `dashboard_${batch}_${section}_${filter}_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const handleSort = (field: string) => {
     if (sortBy === field) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
@@ -213,6 +302,17 @@ const exportLatestContestData = () => {
             />
 
             <div className="flex gap-2">
+              {/* Export Button for Dashboard */}
+              <button
+                onClick={exportDashboardToCSV}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold text-sm transition-all flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Export Dashboard
+              </button>
+              
               {['All', 'SDE', 'Non-SDE'].map((type) => (
                 <button
                   key={type}
@@ -310,12 +410,24 @@ const exportLatestContestData = () => {
           </div>
 
           {/* Contest Tab Controls */}
-          <div className="flex items-center justify-end gap-4">
+          <div className="flex items-center justify-between gap-4">
+            {/* Export Button */}
+            <button
+              onClick={exportToCSV}
+              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold text-sm transition-all flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Export {contestTab === 'attended' ? 'Attended' : 'Not Attended'}
+            </button>
+            
             <div className="flex gap-2">
               {['attended', 'not-attended'].map((tab) => {
                 const isActive = contestTab === tab;
+                // Fix: Use same logic as display filtering for accurate count
                 const attendedCount = data.students.filter((s: Student) =>
-                  s.latestContests.some((c) => c.data.attempted)
+                  s.latestContests.some((c) => c.data.attempted || c.data.available)
                 ).length;
                 const notAttendedCount = data.students.length - attendedCount;
 
