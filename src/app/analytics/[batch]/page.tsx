@@ -3,6 +3,8 @@
 import { useQuery, gql } from "@apollo/client"
 import { useParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Progress } from "@/components/ui/progress"
 import { BarChart3, Trophy, Users, Target, TrendingUp, Calendar, Award, Activity, BarChart, PieChart, LineChart } from "lucide-react"
 import {
   Chart as ChartJS,
@@ -84,9 +86,13 @@ export default function BatchAnalyticsPage() {
     )
   }
 
-  // Prepare chart data for sections
-  const sectionNames = Object.keys(batchAnalytics.sections || {})
-  const sectionRatings = sectionNames.map(section => batchAnalytics.sections[section]?.averageRating || 0)
+  // Prepare chart data for sections - sorted by rating
+  const sections = Object.entries(batchAnalytics.sections || {})
+    .map(([name, data]: [string, any]) => ({ name, rating: data?.averageRating || 0 }))
+    .sort((a, b) => b.rating - a.rating) // Sort by rating descending
+  
+  const sectionNames = sections.map(section => section.name)
+  const sectionRatings = sections.map(section => section.rating)
 
   // Section-wise rating chart
   const sectionRatingData = {
@@ -190,26 +196,32 @@ export default function BatchAnalyticsPage() {
           </CardContent>
         </Card>
 
-        {/* Section Details */}
-        {batchAnalytics.sections && Object.keys(batchAnalytics.sections).length > 0 && (
+        {/* Section Details - Sorted by Rating */}
+        {sections && sections.length > 0 && (
           <Card className="bg-[#1e1e1e] border-gray-600 mb-8">
             <CardHeader>
-              <CardTitle className="text-orange-300">Section Details</CardTitle>
+              <CardTitle className="text-orange-300">Section Details (Sorted by Rating)</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {Object.entries(batchAnalytics.sections).map(([sectionName, sectionData]: [string, any]) => (
-                  <Card key={sectionName} className="bg-[#2a2a2a] border-gray-500">
+                {sections.map((section, index) => (
+                  <Card key={section.name} className="bg-[#2a2a2a] border-gray-500 hover:border-orange-300 transition-colors">
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-lg text-white">{sectionName}</CardTitle>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-lg text-white">{section.name}</CardTitle>
+                        <Badge variant="secondary" className="bg-orange-500 text-white">
+                          #{index + 1}
+                        </Badge>
+                      </div>
                     </CardHeader>
                     <CardContent>
-                                           <div className="space-y-2">
-                       <div className="flex justify-between">
-                         <span className="text-gray-400">Rating:</span>
-                         <span className="text-white font-semibold">{Math.round(sectionData.averageRating)}</span>
-                       </div>
-                     </div>
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Rating:</span>
+                          <span className="text-white font-semibold">{Math.round(section.rating)}</span>
+                        </div>
+                        <Progress value={Math.min((section.rating / 2000) * 100, 100)} className="mt-2" />
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
