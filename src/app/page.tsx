@@ -3,7 +3,8 @@
 import AddBatchCard from "./components/Home/AddBatchCard"
 import BatchCard from "./components/Home/BatchCard"
 import { Button } from "@/components/ui/button"
-import { LogOut, User } from "lucide-react"
+import { LogOut, User, BarChart3 } from "lucide-react"
+import Link from "next/link"
 import { useAuth } from "./components/AuthProvider"
 import { gql, useQuery } from "@apollo/client"
 
@@ -30,6 +31,16 @@ export default function HomePage() {
           🏆 LeetCode Tracker
         </h1>
         <div className="flex items-center gap-4 text-sm">
+          <Link href="/analytics">
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-[#1a1a1a] border border-orange-300 text-orange-300 hover:bg-gray-700 flex items-center gap-2"
+            >
+              <BarChart3 className="h-4 w-4" />
+              Analytics Dashboard
+            </Button>
+          </Link>
           <div className="flex items-center gap-2 text-gray-200">
             <User className="h-4 w-4 text-orange-400" />
             <span>{userEmail}</span>

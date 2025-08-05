@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
-import { Users, Trophy, ArrowRight } from "lucide-react"
+import { BarChart3, Trophy, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 type BatchCardProps = {
@@ -31,10 +31,14 @@ export default function BatchCard({ batch , secCount }: BatchCardProps) {
         </h2>
         <Button
           variant="ghost"
+          onClick={(e) => {
+            e.stopPropagation()
+            router.push(`/analytics/${batch}`)
+          }}
           className="flex items-center gap-1 text-gray-300 hover:text-orange-200 px-0 py-0 h-auto text-sm font-medium bg-transparent shadow-none"
         >
-          <Users className="h-4 w-4 mr-1 text-orange-400" />
-          View leaderboard
+          <BarChart3 className="h-4 w-4 mr-1 text-orange-400" />
+          Analytics
         </Button>
       </CardContent>
     </Card>
