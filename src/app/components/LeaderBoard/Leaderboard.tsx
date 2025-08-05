@@ -1,7 +1,20 @@
 'use client';
+import client from '@/lib/apollo-client';
 import { gql, useQuery } from '@apollo/client';
-import { useState } from 'react';
+import {  useState } from 'react';
 import * as XLSX from 'xlsx';
+
+interface LeaderboardEntry {
+  student: Student;
+  latest: Student['latestContests'][0];
+  trend: 'UP' | 'DOWN';
+  copied: boolean;
+  score: number;
+  oldRating: number;
+  newRating: number;
+  solvedCount: number;
+  globalRanking: number;
+}
 
 interface Student {
   id: string;
@@ -35,41 +48,45 @@ interface Student {
   }>;
 }
 
-const GET_STUDENTS = gql`
-  query GetStudents($batch: String!) {
-    students(batch: $batch) {
-      id
-      name
-      rollNumber
-      totalSolved
-      easySolved
-      mediumSolved
-      hardSolved
-      rating
-      globalRanking
-      topPercentage
-      section
-      attendedContestsCount
-      latestContests {
-        title
-        data {
-          score
-          attempted
-          copied
-          rank
-          solvedCount
-          easySolved
-          mediumSolved
-          hardSolved
-          available
-          new_rating
-          old_rating
-          savedAt
+const GET_PAGINATED_STUDENTS = gql`
+  query PaginatedStudents($batch: String!, $section: String, $limit: Int, $cursor: String) {
+    paginatedStudents(batch: $batch, section: $section, limit: $limit, cursor: $cursor) {
+      students {
+        id
+        name
+        rollNumber
+        totalSolved
+        easySolved
+        mediumSolved
+        hardSolved
+        rating
+        globalRanking
+        topPercentage
+        section
+        attendedContestsCount
+        latestContests {
+          title
+          data {
+            score
+            attempted
+            copied
+            rank
+            solvedCount
+            easySolved
+            mediumSolved
+            hardSolved
+            available
+            new_rating
+            old_rating
+            savedAt
+          }
         }
       }
+      nextCursor
     }
   }
 `;
+
 
 type LeaderboardProps = {
   batch: string;
@@ -78,107 +95,71 @@ type LeaderboardProps = {
 };
 
 const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
+  const [students, setStudents] = useState<Student[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+
   const [activeTab, setActiveTab] = useState<'dashboard' | 'contests'>('dashboard');
   const [contestTab, setContestTab] = useState<'attended' | 'not-attended'>('attended');
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<'All' | 'SDE' | 'Non-SDE'>('All');
   const [sortBy, setSortBy] = useState<string>('');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [page, setPage] = useState(0);
+  const [cursorHistory, setCursorHistory] = useState<(string | null)[]>([null]);
 
-  const { data, loading, error } = useQuery(GET_STUDENTS, {
-    variables: { batch },
+  const [fetchLoading, setFetchLoading] = useState(false);
+  
+  const { loading, error, fetchMore, data } = useQuery(GET_PAGINATED_STUDENTS, {
+    variables: {
+      batch,
+      section: section === 'All' ? null : section,
+      limit: 20,
+      cursor: null,
+    },
+    onCompleted: (data) => {
+      setStudents(data.paginatedStudents.students);
+      setNextCursor(data.paginatedStudents.nextCursor);
+  
+      // This ensures pagination logic is synced
+      setPage(0);
+      setCursorHistory([null]); // First page always starts at null
+    },
   });
+  
+  const handlePageChange = async (pageIndex) => {
+    const cursor = cursorHistory[pageIndex];
+    setFetchLoading(true);
+  
+    fetchMore({
+      variables: {
+        batch,
+        section: section === 'All' ? null : section,
+        limit: 20,
+        cursor,
+      },
+      updateQuery: (_, { fetchMoreResult }) => {
+        const newStudents = fetchMoreResult.paginatedStudents.students;
+        const newCursor = fetchMoreResult.paginatedStudents.nextCursor;
+  
+        setStudents(newStudents);
+        setNextCursor(newCursor);
+  
+        // Update cursor history only if it's a new page
+        if (cursorHistory.length === pageIndex + 1 && newCursor) {
+          setCursorHistory([...cursorHistory, newCursor]);
+        }
+  
+        setPage(pageIndex);
+        setFetchLoading(false);
+        return fetchMoreResult;
+      },
+    });
+  };
+  
+
+
 
   const SDE_SECTIONS = ['CSE-L', 'CSE-M', 'CSE-N', 'CSE-O', 'CSE-P', 'CSE-Q'];
-
-  // Export function for contest data
-  const exportToCSV = () => {
-    const filteredData = data.students
-      .filter((student: Student) => {
-        const studentSection = student.section?.toUpperCase() ?? '';
-        const isSDE = SDE_SECTIONS.includes(studentSection);
-        const sectionMatch = !section || section.toLowerCase() === 'all' || studentSection === section.toUpperCase();
-
-        if (!sectionMatch) return false;
-        if (filter === 'SDE' && !isSDE) return false;
-        if (filter === 'Non-SDE' && isSDE) return false;
-        return true;
-      })
-      .map((student: Student) => {
-        const contests = student.latestContests.filter((contest) =>
-          contestTab === 'attended'
-            ? contest.data.attempted || contest.data.available
-            : !contest.data.attempted && !contest.data.available
-        );
-        const latest = contests[0];
-        return { student, latest };
-      })
-      .filter((item: { student: Student; latest: Student['latestContests'][0] }) => item.latest);
-
-    const csvData = filteredData.map((item: { student: Student; latest: Student['latestContests'][0] }, index: number) => ({
-      'S.No': index + 1,
-      'Name': item.student.name,
-      'Roll Number': item.student.rollNumber,
-      'Section': item.student.section,
-      'Score': item.latest?.data.score || '-',
-      'Attempted': item.latest?.data.attempted ? 'Yes' : 'No',
-      'Available': item.latest?.data.available ? 'Yes' : 'No',
-      'Problems Solved': item.latest?.data.solvedCount || 0,
-      'Old Rating': item.latest?.data.old_rating || 0,
-      'New Rating': item.latest?.data.new_rating || 0,
-      'Copied': item.latest?.data.copied ? 'Yes' : 'No',
-      'Global Ranking': item.student.globalRanking || '-',
-      'Total Solved': item.student.totalSolved || 0,
-    }));
-
-    const csvContent = [
-      Object.keys(csvData[0] || {}).join(','),
-      ...csvData.map((row: Record<string, string | number>) => Object.values(row).map((val: string | number) => `"${val}"`).join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `leaderboard_${contestTab}_${batch}_${section}_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  // Export function for dashboard data
-  const exportDashboardToCSV = () => {
-    const csvData = filteredStudents.map((student: Student, index: number) => ({
-      'S.No': index + 1,
-      'Name': student.name,
-      'Roll Number': student.rollNumber,
-      'Section': student.section,
-      'Total Solved': student.totalSolved || 0,
-      'Easy Solved': student.easySolved || 0,
-      'Medium Solved': student.mediumSolved || 0,
-      'Hard Solved': student.hardSolved || 0,
-      'Rating': student.rating || 0,
-      'Global Ranking': student.globalRanking || '-',
-      'Top Percentage': student.topPercentage || '-',
-      'Contests Attended': student.attendedContestsCount || 0,
-    }));
-
-    const csvContent = [
-      Object.keys(csvData[0] || {}).join(','),
-      ...csvData.map((row: Record<string, string | number>) => Object.values(row).map((val: string | number) => `"${val}"`).join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `dashboard_${batch}_${section}_${filter}_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
 
   const handleSort = (field: string) => {
     if (sortBy === field) {
@@ -188,8 +169,33 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
       setSortOrder('desc');
     }
   };
-const exportLatestContestData = () => {
-    const exportData = data.students
+  const exportLatestContestData = async () => {
+    let allStudents: Student[] = [];
+    let currentCursor: string | null = null;
+
+    // Fetch all paginated data
+    while (true) {
+      const { data } = await client.query({
+        query: GET_PAGINATED_STUDENTS,
+        variables: {
+          batch,
+          section: section === 'All' ? null : section,
+          limit: 100, // you can adjust the batch size
+          cursor: currentCursor,
+        },
+        fetchPolicy: 'network-only', // ensures fresh fetch
+      });
+
+      const newStudents = data.paginatedStudents.students;
+      const nextCursor = data.paginatedStudents.nextCursor;
+
+      allStudents = [...allStudents, ...newStudents];
+
+      if (!nextCursor) break;
+      currentCursor = nextCursor;
+    }
+
+    const exportData = allStudents
       .filter((student: Student) => {
         const studentSection = student.section?.toUpperCase() ?? '';
         const isSDE = SDE_SECTIONS.includes(studentSection);
@@ -236,6 +242,7 @@ const exportLatestContestData = () => {
     XLSX.writeFile(workbook, 'LatestContestLeaderboard.xlsx');
   };
 
+
   if (loading)
     return <div className="mt-6 flex justify-center">
       <div className="w-8 h-8 border-4 border-orange-400 border-t-transparent rounded-full animate-spin"></div>
@@ -244,7 +251,7 @@ const exportLatestContestData = () => {
   if (error)
     return <p className="text-center p-8 text-red-500 font-semibold">Error: {error.message}</p>;
 
-  const filteredStudents = data.students.filter((student: Student) => {
+  const filteredStudents = students.filter((student: Student) => {
     const matchesSearch =
       student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       student.rollNumber.toLowerCase().includes(searchQuery.toLowerCase());
@@ -302,17 +309,6 @@ const exportLatestContestData = () => {
             />
 
             <div className="flex gap-2">
-              {/* Export Button for Dashboard */}
-              <button
-                onClick={exportDashboardToCSV}
-                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold text-sm transition-all flex items-center gap-2"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                Export Dashboard
-              </button>
-              
               {['All', 'SDE', 'Non-SDE'].map((type) => (
                 <button
                   key={type}
@@ -373,23 +369,67 @@ const exportLatestContestData = () => {
               </div>
             ))}
           </div>
+          {students.length > 0 && (
+  <div className="flex justify-center mt-6 gap-2">
+    {cursorHistory.map((_, index) => (
+      <button
+        key={index}
+        onClick={() => !fetchLoading && handlePageChange(index)}
+        disabled={fetchLoading}
+        className={`px-3 py-1.5 rounded border text-sm font-semibold transition-all duration-200 
+          ${page === index
+            ? 'bg-[#fcd9b8] text-black'
+            : 'bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700'} 
+          ${fetchLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+      >
+        {fetchLoading && page === index ? (
+          <svg className="animate-spin h-4 w-4 mx-auto" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 11-8 8z" />
+          </svg>
+        ) : (
+          index + 1
+        )}
+      </button>
+    ))}
+
+    {nextCursor && (
+      <button
+        onClick={() => !fetchLoading && handlePageChange(page + 1)}
+        disabled={fetchLoading}
+        className="px-3 py-1.5 rounded border text-sm font-semibold bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {fetchLoading ? (
+          <svg className="animate-spin h-4 w-4 mx-auto" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 11-8 8z" />
+          </svg>
+        ) : (
+          'Next →'
+        )}
+      </button>
+    )}
+  </div>
+)}
+
+
         </div>
       )}
 
       {activeTab === 'contests' && (
         <div className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-  <h1 className="text-xl text-[#fcd9b8] font-bold">
-    {data.students[0]?.latestContests?.[0]?.title ?? 'Latest Contest'}
-  </h1>
-  <button
-    onClick={exportLatestContestData}
-    className="px-4 py-2 rounded-lg text-sm font-semibold text-gray-300 border border-gray-700 hover:bg-gray-700"
-  >
-    Export to Excel
-  </button>
-</div>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <h1 className="text-xl text-[#fcd9b8] font-bold">
+                {students[0]?.latestContests?.[0]?.title ?? 'Latest Contest'}
+              </h1>
+              <button
+                onClick={exportLatestContestData}
+                className="px-4 py-2 rounded-lg text-sm font-semibold text-gray-300 border border-gray-700 hover:bg-gray-700"
+              >
+                Export to Excel
+              </button>
+            </div>
 
 
             {/* Filter Options */}
@@ -410,26 +450,14 @@ const exportLatestContestData = () => {
           </div>
 
           {/* Contest Tab Controls */}
-          <div className="flex items-center justify-between gap-4">
-            {/* Export Button */}
-            <button
-              onClick={exportToCSV}
-              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold text-sm transition-all flex items-center gap-2"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              Export {contestTab === 'attended' ? 'Attended' : 'Not Attended'}
-            </button>
-            
+          <div className="flex items-center justify-end gap-4">
             <div className="flex gap-2">
               {['attended', 'not-attended'].map((tab) => {
                 const isActive = contestTab === tab;
-                // Fix: Use same logic as display filtering for accurate count
-                const attendedCount = data.students.filter((s: Student) =>
-                  s.latestContests.some((c) => c.data.attempted || c.data.available)
+                const attendedCount = students.filter((s: Student) =>
+                  s.latestContests.some((c) => c.data.attempted)
                 ).length;
-                const notAttendedCount = data.students.length - attendedCount;
+                const notAttendedCount = students.length - attendedCount;
 
                 return (
                   <button
@@ -487,12 +515,13 @@ const exportLatestContestData = () => {
           </div>
 
           <div className="space-y-4">
-            {data.students
+            {students
               .filter((student: Student) => {
                 const studentSection = student.section?.toUpperCase() ?? '';
                 const isSDE = SDE_SECTIONS.includes(studentSection);
 
-                const sectionMatch = !section || section.toLowerCase() === 'all' || studentSection === section.toUpperCase();
+                const sectionMatch =
+                  !section || section.toLowerCase() === 'all' || studentSection === section.toUpperCase();
 
                 if (!sectionMatch) return false;
                 if (filter === 'SDE' && !isSDE) return false;
@@ -500,9 +529,7 @@ const exportLatestContestData = () => {
 
                 return true;
               })
-
-
-              .map((student: Student) => {
+              .map((student: Student): LeaderboardEntry | null => {
                 const contests = student.latestContests.filter((contest) =>
                   contestTab === 'attended'
                     ? contest.data.attempted || contest.data.available
@@ -512,7 +539,8 @@ const exportLatestContestData = () => {
                 const latest = contests[0];
                 if (!latest) return null;
 
-                const trend = latest.data.new_rating > latest.data.old_rating ? 'UP' : 'DOWN';
+                const trend: 'UP' | 'DOWN' =
+                  latest.data.new_rating > latest.data.old_rating ? 'UP' : 'DOWN';
 
                 return {
                   student,
@@ -523,15 +551,15 @@ const exportLatestContestData = () => {
                   oldRating: latest.data.old_rating,
                   newRating: latest.data.new_rating,
                   solvedCount: latest.data.solvedCount,
-                  globalRanking: student.globalRanking
+                  globalRanking: student.globalRanking,
                 };
               })
-              .filter(Boolean)
-              .sort((a: { [key: string]: number | boolean | Student }, b: { [key: string]: number | boolean | Student }) => {
+              .filter((entry): entry is LeaderboardEntry => entry !== null)
+              .sort((a, b) => {
                 if (!sortBy) return 0;
 
-                let aValue = a[sortBy];
-                let bValue = b[sortBy];
+                let aValue: any = a[sortBy as keyof LeaderboardEntry];
+                let bValue: any = b[sortBy as keyof LeaderboardEntry];
 
                 if (sortBy === 'copied') {
                   aValue = aValue ? 1 : 0;
@@ -539,13 +567,14 @@ const exportLatestContestData = () => {
                 }
 
                 if (typeof aValue === 'number' && typeof bValue === 'number') {
-                  if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
-                  if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
+                  return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
                 }
+
                 return 0;
               })
-              .map((item: { student: Student; latest: Student['latestContests'][0]; trend: string }) => {
+              .map((item) => {
                 const { student, latest, trend } = item;
+
 
                 return (
                   <div
@@ -579,10 +608,10 @@ const exportLatestContestData = () => {
                     <div className="text-center">
                       <span
                         className={`px-2 py-1 rounded-full text-xs font-bold ${latest.data.attempted
-                            ? latest.data.copied
-                              ? 'bg-red-500 text-white'
-                              : 'bg-green-500 text-white'
-                            : 'bg-gray-500 text-white'
+                          ? latest.data.copied
+                            ? 'bg-red-500 text-white'
+                            : 'bg-green-500 text-white'
+                          : 'bg-gray-500 text-white'
                           }`}
                       >
                         {latest.data.attempted
@@ -622,6 +651,53 @@ const exportLatestContestData = () => {
                 );
               })}
           </div>
+          {students.length > 0 && (
+  <div className="flex justify-center mt-6 gap-2">
+    {cursorHistory.map((_, index) => (
+      <button
+        key={index}
+        onClick={() => !fetchLoading && handlePageChange(index)}
+        disabled={fetchLoading}
+        className={`px-3 py-1.5 rounded border text-sm font-semibold transition-all duration-200 
+          ${page === index
+            ? 'bg-[#fcd9b8] text-black'
+            : 'bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700'} 
+          ${fetchLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+      >
+        {fetchLoading && page === index ? (
+          <svg className="animate-spin h-4 w-4 mx-auto" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 11-8 8z" />
+          </svg>
+        ) : (
+          index + 1
+        )}
+      </button>
+    ))}
+
+    {nextCursor && (
+      <button
+        onClick={() => !fetchLoading && handlePageChange(page + 1)}
+        disabled={fetchLoading}
+        className="px-3 py-1.5 rounded border text-sm font-semibold bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {fetchLoading ? (
+          <svg className="animate-spin h-4 w-4 mx-auto" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 11-8 8z" />
+          </svg>
+        ) : (
+          'Next →'
+        )}
+      </button>
+    )}
+  </div>
+)}
+
+
+
+
+
         </div>
       )}
     </div>

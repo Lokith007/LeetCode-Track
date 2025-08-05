@@ -46,7 +46,12 @@ export default function CsvUploader({ batch }: { batch: string }) {
             rollnumber: clean(row['roll number']),
             section: clean(row['section']),
           }))
-          .filter((s: Student) => s.username || s.realname || s.rollnumber || s.section);
+          .filter((s: Student) => s.username !== '');
+
+        const invalidCount = results.data.length - students.length;
+        if (invalidCount > 0) {
+          console.warn(`${invalidCount} student(s) skipped due to empty username`);
+        }
 
         console.log('Parsed students:', students);
 
@@ -63,7 +68,8 @@ export default function CsvUploader({ batch }: { batch: string }) {
           console.error('Upload failed:', err);
           alert('Failed to upload students.');
         }
-      },
+      }
+
     });
   }, [uploadStudents, batch]);
 
@@ -140,8 +146,8 @@ export default function CsvUploader({ batch }: { batch: string }) {
       )}
 
       {loading && <div className="mt-6 flex justify-center">
-    <div className="w-8 h-8 border-4 border-orange-400 border-t-transparent rounded-full animate-spin"></div>
-  </div>}
+        <div className="w-8 h-8 border-4 border-orange-400 border-t-transparent rounded-full animate-spin"></div>
+      </div>}
       {error && <p className="text-sm text-red-600 mt-4">Upload failed. Please try again.</p>}
     </div>
   );
