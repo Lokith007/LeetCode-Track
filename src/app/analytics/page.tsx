@@ -76,11 +76,14 @@ export default function AnalyticsDashboard() {
 
   const analytics = data?.getAllAnalytics || []
 
+  // Sort analytics by average rating (highest first)
+  const sortedAnalytics = [...analytics].sort((a: any, b: any) => b.averageRating - a.averageRating)
+
   // Prepare chart data
-  const batchNames = analytics.map((item: any) => item.batch)
-  const averageRatings = analytics.map((item: any) => Math.round(item.averageRating))
-  const averageSolved = analytics.map((item: any) => parseFloat(item.averageSolved.toFixed(2)))
-  const participationRates = analytics.map((item: any) => parseFloat(item.participationRate.toFixed(1)))
+  const batchNames = sortedAnalytics.map((item: any) => item.batch)
+  const averageRatings = sortedAnalytics.map((item: any) => Math.round(item.averageRating))
+  const averageSolved = sortedAnalytics.map((item: any) => parseFloat(item.averageSolved.toFixed(2)))
+  const participationRates = sortedAnalytics.map((item: any) => parseFloat(item.participationRate.toFixed(1)))
 
   // Bar chart data for average ratings
   const ratingChartData = {
@@ -246,9 +249,9 @@ export default function AnalyticsDashboard() {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
-            {/* Batch Overview Cards */}
+            {/* Batch Overview Cards - Sorted by Rating */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {analytics.map((batch: any, index: number) => (
+              {sortedAnalytics.map((batch: any, index: number) => (
                 <Card key={index} className="bg-[#1e1e1e] border-orange-300 hover:border-orange-200 transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/20">
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
@@ -425,7 +428,7 @@ export default function AnalyticsDashboard() {
 
           <TabsContent value="performance" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {analytics.map((batch: any, index: number) => (
+              {sortedAnalytics.map((batch: any, index: number) => (
                 <Card key={index} className="bg-[#1e1e1e] border-green-300 hover:border-green-200 transition-all duration-300">
                   <CardHeader>
                     <div className="flex items-center justify-between">
@@ -441,14 +444,22 @@ export default function AnalyticsDashboard() {
                   <CardContent>
                     {batch.sections && Object.keys(batch.sections).length > 0 ? (
                       <div className="space-y-4">
-                        {Object.entries(batch.sections).map(([sectionName, sectionData]: [string, any]) => (
-                          <div key={sectionName} className="bg-[#2a2a2a] rounded-lg p-4 hover:bg-[#3a3a3a] transition-colors">
-                            <div className="flex items-center justify-between mb-3">
-                              <h4 className="text-white font-semibold text-lg">{sectionName}</h4>
-                              <Badge variant="outline" className="text-green-300 border-green-300">
-                                {Math.round(sectionData.averageRating)} Rating
-                              </Badge>
-                            </div>
+                        {Object.entries(batch.sections)
+                          .map(([sectionName, sectionData]: [string, any]) => ({ name: sectionName, data: sectionData }))
+                          .sort((a, b) => (b.data.averageRating || 0) - (a.data.averageRating || 0))
+                          .map(({ name: sectionName, data: sectionData }, sectionIndex) => (
+                                                      <div key={sectionName} className="bg-[#2a2a2a] rounded-lg p-4 hover:bg-[#3a3a3a] transition-colors">
+                              <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-3">
+                                  <h4 className="text-white font-semibold text-lg">{sectionName}</h4>
+                                  <Badge variant="secondary" className="bg-green-500 text-white">
+                                    #{sectionIndex + 1}
+                                  </Badge>
+                                </div>
+                                <Badge variant="outline" className="text-green-300 border-green-300">
+                                  {Math.round(sectionData.averageRating)} Rating
+                                </Badge>
+                              </div>
                             <div className="grid grid-cols-3 gap-4">
                               <div className="text-center">
                                 <div className="text-white font-bold text-lg">{Math.round(sectionData.averageRating)}</div>
@@ -499,7 +510,7 @@ export default function AnalyticsDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
-                  {analytics.map((batch: any, index: number) => (
+                  {sortedAnalytics.map((batch: any, index: number) => (
                     <div key={index} className="bg-[#2a2a2a] rounded-lg p-6">
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
@@ -562,7 +573,7 @@ export default function AnalyticsDashboard() {
 
           <TabsContent value="students" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {analytics.map((batch: any, index: number) => (
+              {sortedAnalytics.map((batch: any, index: number) => (
                 <Card key={index} className="bg-[#1e1e1e] border-purple-300 hover:border-purple-200 transition-all duration-300">
                   <CardHeader>
                     <div className="flex items-center justify-between">
@@ -695,7 +706,7 @@ export default function AnalyticsDashboard() {
               </CardHeader>
               <CardContent>
                 <Accordion type="single" collapsible className="w-full">
-                  {analytics.map((batch: any, index: number) => (
+                  {sortedAnalytics.map((batch: any, index: number) => (
                     <AccordionItem key={index} value={`item-${index}`} className="border-gray-700">
                       <AccordionTrigger className="text-white hover:text-orange-300">
                         <div className="flex items-center gap-4">
