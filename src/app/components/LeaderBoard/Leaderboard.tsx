@@ -1,7 +1,7 @@
 'use client';
 import client from '@/lib/apollo-client';
 import { gql, useQuery } from '@apollo/client';
-import {  useState, useEffect } from 'react';
+import { useState } from 'react';
 import * as XLSX from 'xlsx';
 
 interface LeaderboardEntry {
@@ -96,22 +96,19 @@ type LeaderboardProps = {
 
 const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
   const [students, setStudents] = useState<Student[]>([]);
-  const [allStudents, setAllStudents] = useState<Student[]>([]); // Store all students for search
   const [nextCursor, setNextCursor] = useState<string | null>(null);
 
   const [activeTab, setActiveTab] = useState<'dashboard' | 'contests'>('dashboard');
   const [contestTab, setContestTab] = useState<'attended' | 'not-attended'>('attended');
-  const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<'All' | 'SDE' | 'Non-SDE'>('All');
   const [sortBy, setSortBy] = useState<string>('');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [page, setPage] = useState(0);
   const [cursorHistory, setCursorHistory] = useState<(string | null)[]>([null]);
-  const [isSearching, setIsSearching] = useState(false);
 
   const [fetchLoading, setFetchLoading] = useState(false);
   
-  const { loading, error, fetchMore, data, refetch } = useQuery(GET_PAGINATED_STUDENTS, {
+  const { loading, error, data, refetch } = useQuery(GET_PAGINATED_STUDENTS, {
     variables: {
       batch,
       section: section === 'All' ? null : section,
@@ -128,93 +125,7 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
     },
   });
 
-  // Function to load all students for comprehensive search
-  const loadAllStudentsForSearch = async () => {
-    if (allStudents.length > 0) return allStudents; // Return cached if already loaded
-    
-    let allData: Student[] = [];
-    let currentCursor: string | null = null;
 
-    while (true) {
-      try {
-        const { data }: { data: any } = await client.query({
-          query: GET_PAGINATED_STUDENTS,
-          variables: {
-            batch,
-            section: section === 'All' ? null : section,
-            limit: 100,
-            cursor: currentCursor,
-          },
-          fetchPolicy: 'network-only',
-        });
-
-        const newStudents: Student[] = data.paginatedStudents.students;
-        const nextCursor: string | null = data.paginatedStudents.nextCursor;
-
-        allData = [...allData, ...newStudents];
-
-        if (!nextCursor) break;
-        currentCursor = nextCursor;
-      } catch (error) {
-        console.error('Error loading all students:', error);
-        break;
-      }
-    }
-
-    setAllStudents(allData);
-    return allData;
-  };
-
-  // Handle search
-  const handleSearch = async (query: string) => {
-    if (!query.trim()) {
-      // If search is cleared, reset to normal pagination
-      setIsSearching(false);
-      setPage(0);
-      setCursorHistory([null]);
-      // Reload first page
-      try {
-        const { data } = await refetch();
-        if (data) {
-          setStudents(data.paginatedStudents.students);
-          setNextCursor(data.paginatedStudents.nextCursor);
-        }
-      } catch (error) {
-        console.error('Error resetting search:', error);
-      }
-      return;
-    }
-
-    // Perform search
-    setIsSearching(true);
-    setFetchLoading(true);
-    
-    try {
-      const allData = await loadAllStudentsForSearch();
-      const searchResults = allData.filter((student: Student) => 
-        student.name.toLowerCase().includes(query.toLowerCase()) ||
-        student.rollNumber.toLowerCase().includes(query.toLowerCase())
-      );
-      
-      setStudents(searchResults);
-      setNextCursor(null); // No pagination for search results
-      setPage(0);
-      setCursorHistory([null]);
-    } catch (error) {
-      console.error('Error during search:', error);
-    } finally {
-      setFetchLoading(false);
-    }
-  };
-
-  // Debounced search effect
-  useEffect(() => {
-    const searchTimeout = setTimeout(() => {
-      handleSearch(searchQuery);
-    }, 300);
-
-    return () => clearTimeout(searchTimeout);
-  }, [searchQuery]); // Only depend on searchQuery to avoid dependency array issues
   
   const handlePageChange = async (pageIndex: number) => {
     setFetchLoading(true);
@@ -238,13 +149,15 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
         return;
       }
       
-      const { data } = await fetchMore({
+      const { data } = await client.query({
+        query: GET_PAGINATED_STUDENTS,
         variables: {
           batch,
           section: section === 'All' ? null : section,
           limit: 20,
           cursor,
         },
+        fetchPolicy: 'network-only',
       });
 
       if (data) {
@@ -363,7 +276,7 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
     return <p className="text-center p-8 text-red-500 font-semibold">Error: {error.message}</p>;
 
   const filteredStudents = students.filter((student: Student) => {
-    // Server-side search is now handled by GraphQL query, so no need for client-side search filtering
+    // SDE/Non-SDE filtering only
     const studentSection = student.section?.toUpperCase() ?? '';
     const isSDE = SDE_SECTIONS.includes(studentSection);
 
@@ -374,7 +287,7 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
     if (filter === 'SDE' && !isSDE) return false;
     if (filter === 'Non-SDE' && isSDE) return false;
 
-    return true; // All search filtering is now done server-side
+    return true;
   });
 
 
@@ -406,16 +319,8 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
 
       {activeTab === 'dashboard' && (
         <div className="space-y-6">
-          {/* Search + Filter */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <input
-              type="text"
-              placeholder="Search by name or roll number..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full sm:w-1/3 px-4 py-2 rounded-md bg-[#1f1f1f] text-sm text-gray-200 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-[#fcd9b8]"
-            />
-
+          {/* Filter */}
+          <div className="flex justify-end gap-4">
             <div className="flex gap-2">
               {['All', 'SDE', 'Non-SDE'].map((type) => (
                 <button
@@ -432,16 +337,6 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
             </div>
           </div>
 
-          {/* Search Results Indicator */}
-          {isSearching && (
-            <div className="text-center text-gray-400 text-sm">
-              {students.length === 0 ? 
-                `No results found for "${searchQuery}"` : 
-                `Found ${students.length} result${students.length === 1 ? '' : 's'} for "${searchQuery}"`
-              }
-            </div>
-          )}
-
           {/* Leaderboard Cards */}
           <div className="space-y-4">
             {filteredStudents.map((student: Student, index: number) => (
@@ -450,7 +345,7 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
                 className="grid grid-cols-[0.5fr_2fr_1.2fr_1fr_1.5fr_1fr_1fr_1fr] gap-4 items-center px-6 py-4 bg-[#1f1f1f] rounded-xl shadow-md border border-[#f59e0b40]"
               >
                 <div className="text-center text-sm font-semibold text-gray-300">
-                  {isSearching ? index + 1 : (page * 20) + index + 1}
+                  {(page * 20) + index + 1}
                 </div>
                 <div className="flex items-center gap-4 min-w-0">
                   <div className="w-10 h-10 rounded-full bg-[#fcd9b8] text-black font-bold flex items-center justify-center text-sm">
@@ -489,7 +384,7 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
               </div>
             ))}
           </div>
-          {students.length > 0 && !isSearching && (
+          {students.length > 0 && (
   <div className="flex justify-center mt-6 gap-2">
     {cursorHistory.map((_, index) => (
       <button
@@ -522,7 +417,7 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
         {fetchLoading ? (
           <svg className="animate-spin h-4 w-4 mx-auto" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 11-8 8z" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 812-8v4l3-3-3-3v4a8 8 0 11-8 8z" />
           </svg>
         ) : (
           'Next →'
@@ -771,7 +666,7 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
                 );
               })}
           </div>
-          {students.length > 0 && !isSearching && (
+          {students.length > 0 && (
   <div className="flex justify-center mt-6 gap-2">
     {cursorHistory.map((_, index) => (
       <button
