@@ -108,6 +108,8 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
 
   const [fetchLoading, setFetchLoading] = useState(false);
   
+
+  
   const { loading, error, data, refetch } = useQuery(GET_PAGINATED_STUDENTS, {
     variables: {
       batch,
@@ -320,22 +322,24 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
       {activeTab === 'dashboard' && (
         <div className="space-y-6">
           {/* Filter */}
-          <div className="flex justify-end gap-4">
-            <div className="flex gap-2">
-              {['All', 'SDE', 'Non-SDE'].map((type) => (
-                <button
-                  key={type}
-                  onClick={() => setFilter(type as 'All' | 'SDE' | 'Non-SDE')}
-                  className={`px-4 py-2 rounded-lg text-sm font-semibold border shadow-sm ${filter === type
-                    ? 'bg-[#fcd9b8] text-black'
-                    : 'bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700'
-                    }`}
-                >
-                  {type}
-                </button>
-              ))}
+          {(section === 'All' || section === 'all') && (
+            <div className="flex justify-end gap-4">
+              <div className="flex gap-2">
+                {['All', 'SDE', 'Non-SDE'].map((type) => (
+                  <button
+                    key={type}
+                    onClick={() => setFilter(type as 'All' | 'SDE' | 'Non-SDE')}
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold border shadow-sm ${filter === type
+                      ? 'bg-[#fcd9b8] text-black'
+                      : 'bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700'
+                      }`}
+                  >
+                    {type}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Leaderboard Cards */}
           <div className="space-y-4">
@@ -448,20 +452,22 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
 
 
             {/* Filter Options */}
-            <div className="flex gap-2">
-              {['All', 'SDE', 'Non-SDE'].map((type) => (
-                <button
-                  key={type}
-                  onClick={() => setFilter(type as 'All' | 'SDE' | 'Non-SDE')}
-                  className={`px-4 py-2 rounded-lg text-sm font-semibold border shadow-sm ${filter === type
-                    ? 'bg-[#fcd9b8] text-black'
-                    : 'bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700'
-                    }`}
-                >
-                  {type}
-                </button>
-              ))}
-            </div>
+            {(section === 'All' || section === 'all') && (
+              <div className="flex gap-2">
+                {['All', 'SDE', 'Non-SDE'].map((type) => (
+                  <button
+                    key={type}
+                    onClick={() => setFilter(type as 'All' | 'SDE' | 'Non-SDE')}
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold border shadow-sm ${filter === type
+                      ? 'bg-[#fcd9b8] text-black'
+                      : 'bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700'
+                      }`}
+                  >
+                    {type}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Contest Tab Controls */}
