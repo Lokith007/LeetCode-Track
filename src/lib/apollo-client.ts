@@ -3,7 +3,7 @@
 import { ApolloClient, InMemoryCache } from '@apollo/client';
 
 const client = new ApolloClient({
-  uri: 'https://backend-leetcode-production-880f.up.railway.app/',
+  uri: 'https://backend-leetcode.onrender.com',
   cache: new InMemoryCache(),
 });
 

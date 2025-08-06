@@ -22,7 +22,7 @@ export default function HomePage() {
   const { userEmail, logout } = useAuth()
   const { data, loading, error } = useQuery(GET_ALL_BATCHES)
   console.log(data?.allBatches[0].secCount);
-  
+
   return (
     <main className="min-h-screen flex flex-col items-center justify-start bg-[#121212] text-orange-400 py-12 px-4 font-sans">
       {/* Header with user info and logout */}
@@ -66,6 +66,18 @@ export default function HomePage() {
           <BatchCard key={batch.name} batch={batch.name} secCount={batch.secCount} />
         ))}
       </div>
+      <a
+        href="https://bot-leetcode.onrender.com/"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-6 right-6 z-50 blinking"
+      >
+        <button className="bg-orange-300 text-white px-4 py-3 rounded-full shadow-lg hover:bg-orange-600 transition-all flex items-center gap-2 text-sm font-semibold">
+          🧠 Try AI Assistant
+        </button>
+      </a>
+
+
     </main>
   )
 }

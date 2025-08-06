@@ -1,9 +1,9 @@
-"use client"
-import { GraduationCap, Users } from "lucide-react"
-import { Card } from "@/components/ui/card"
-import CsvUploader from "@/app/components/csvParser/csvParser"
-import { use } from "react"
-import { useRouter } from "next/navigation"
+"use client";
+import { GraduationCap, Users } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import CsvUploader from "@/app/components/csvParser/csvParser";
+import { use } from "react";
+import { useRouter } from "next/navigation";
 
 const LeetCodeSections = ({
   params,
@@ -11,36 +11,46 @@ const LeetCodeSections = ({
   params: Promise<{ batch: string; section: string }>;
 }) => {
   const { batch, section } = use(params);
-  const router = useRouter() // ✅ hook from App Router
-
+  const router = useRouter(); // ✅ hook from App Router
 
   const cseSections = Array.from({ length: parseInt(section) }, (_, i) => ({
     name: `CSE ${String.fromCharCode(65 + i)}`,
-  }))
-console.log(cseSections);
+  }));
+  console.log(cseSections);
 
   const handleSectionClick = (sectionName?: string) => {
-    const formatted = sectionName
-      ? sectionName.replace(/\s+/g, "-")
-      : "all"
-    router.push(`/leaderboard/${batch}/${formatted}`)
-  }
+    const formatted = sectionName ? sectionName.replace(/\s+/g, "-") : "all";
+    router.push(`/leaderboard/${batch}/${formatted}`);
+  };
 
   const isSDESection = (name: string) => {
-    const suffix = name.split(" ")[1]
-    return ["L", "M", "N", "O", "P", "Q"].includes(suffix)
-  }
+    const suffix = name.split(" ")[1];
+    return ["L", "M", "N", "O", "P", "Q"].includes(suffix);
+  };
 
   return (
     <div className="min-h-screen bg-[#121212] text-gray-300 py-12 px-4 sm:px-6 lg:px-12 space-y-10">
-      <div className="text-center space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight text-orange-400">
-          CSE Sections
-        </h2>
-        <p className="text-sm text-gray-400">
-          Click on a section to explore its leaderboard
-        </p>
-      </div>
+      <div className="flex items-center justify-between space-y-0 mb-2">
+        <button
+          onClick={() => {
+            router.back();
+          }}
+          className="px-6 py-2 rounded-lg font-semibold transition-all duration-200 shadow-sm border text-sm
+            bg-[#1f1f1f] border-gray-700 text-gray-300 hover:bg-gray-700"
+        >
+          {"<-"}
+        </button>
+        <div className="flex-1 flex flex-col items-center">
+          <h2 className="text-3xl font-bold tracking-tight text-orange-400">
+            CSE Sections
+          </h2>
+          <p className="text-sm text-gray-400">
+            Click on a section to explore its leaderboard
+          </p>
+        </div>
+        {/* Empty div for spacing on the right */}
+        <div style={{ width: "96px" }}></div>
+      </div><br />  
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
         {/* All Sections Card */}
@@ -92,7 +102,7 @@ console.log(cseSections);
         <CsvUploader batch={batch} />
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default LeetCodeSections
+export default LeetCodeSections;
