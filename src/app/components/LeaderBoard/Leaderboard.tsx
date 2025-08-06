@@ -1,7 +1,7 @@
 'use client';
 import client from '@/lib/apollo-client';
 import { gql, useQuery } from '@apollo/client';
-import {  useState } from 'react';
+import {  useState, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 
 interface LeaderboardEntry {
@@ -96,6 +96,7 @@ type LeaderboardProps = {
 
 const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
   const [students, setStudents] = useState<Student[]>([]);
+  const [allStudents, setAllStudents] = useState<Student[]>([]); // Store all students for search
   const [nextCursor, setNextCursor] = useState<string | null>(null);
 
   const [activeTab, setActiveTab] = useState<'dashboard' | 'contests'>('dashboard');
@@ -106,10 +107,11 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [page, setPage] = useState(0);
   const [cursorHistory, setCursorHistory] = useState<(string | null)[]>([null]);
+  const [isSearching, setIsSearching] = useState(false);
 
   const [fetchLoading, setFetchLoading] = useState(false);
   
-  const { loading, error, fetchMore, data } = useQuery(GET_PAGINATED_STUDENTS, {
+  const { loading, error, fetchMore, data, refetch } = useQuery(GET_PAGINATED_STUDENTS, {
     variables: {
       batch,
       section: section === 'All' ? null : section,
@@ -125,35 +127,144 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
       setCursorHistory([null]); // First page always starts at null
     },
   });
-  
-  const handlePageChange = async (pageIndex) => {
-    const cursor = cursorHistory[pageIndex];
+
+  // Function to load all students for comprehensive search
+  const loadAllStudentsForSearch = async () => {
+    if (allStudents.length > 0) return allStudents; // Return cached if already loaded
+    
+    let allData: Student[] = [];
+    let currentCursor: string | null = null;
+
+    while (true) {
+      try {
+        const { data }: { data: any } = await client.query({
+          query: GET_PAGINATED_STUDENTS,
+          variables: {
+            batch,
+            section: section === 'All' ? null : section,
+            limit: 100,
+            cursor: currentCursor,
+          },
+          fetchPolicy: 'network-only',
+        });
+
+        const newStudents: Student[] = data.paginatedStudents.students;
+        const nextCursor: string | null = data.paginatedStudents.nextCursor;
+
+        allData = [...allData, ...newStudents];
+
+        if (!nextCursor) break;
+        currentCursor = nextCursor;
+      } catch (error) {
+        console.error('Error loading all students:', error);
+        break;
+      }
+    }
+
+    setAllStudents(allData);
+    return allData;
+  };
+
+  // Handle search
+  const handleSearch = async (query: string) => {
+    if (!query.trim()) {
+      // If search is cleared, reset to normal pagination
+      setIsSearching(false);
+      setPage(0);
+      setCursorHistory([null]);
+      // Reload first page
+      try {
+        const { data } = await refetch();
+        if (data) {
+          setStudents(data.paginatedStudents.students);
+          setNextCursor(data.paginatedStudents.nextCursor);
+        }
+      } catch (error) {
+        console.error('Error resetting search:', error);
+      }
+      return;
+    }
+
+    // Perform search
+    setIsSearching(true);
     setFetchLoading(true);
+    
+    try {
+      const allData = await loadAllStudentsForSearch();
+      const searchResults = allData.filter((student: Student) => 
+        student.name.toLowerCase().includes(query.toLowerCase()) ||
+        student.rollNumber.toLowerCase().includes(query.toLowerCase())
+      );
+      
+      setStudents(searchResults);
+      setNextCursor(null); // No pagination for search results
+      setPage(0);
+      setCursorHistory([null]);
+    } catch (error) {
+      console.error('Error during search:', error);
+    } finally {
+      setFetchLoading(false);
+    }
+  };
+
+  // Debounced search effect
+  useEffect(() => {
+    const searchTimeout = setTimeout(() => {
+      handleSearch(searchQuery);
+    }, 300);
+
+    return () => clearTimeout(searchTimeout);
+  }, [searchQuery]); // Only depend on searchQuery to avoid dependency array issues
   
-    fetchMore({
-      variables: {
-        batch,
-        section: section === 'All' ? null : section,
-        limit: 20,
-        cursor,
-      },
-      updateQuery: (_, { fetchMoreResult }) => {
-        const newStudents = fetchMoreResult.paginatedStudents.students;
-        const newCursor = fetchMoreResult.paginatedStudents.nextCursor;
+  const handlePageChange = async (pageIndex: number) => {
+    setFetchLoading(true);
+    
+    try {
+      let cursor: string | null = null;
+      let needsToUpdateHistory = false;
+      
+      // If we're going to a page that exists in our history
+      if (pageIndex < cursorHistory.length) {
+        cursor = cursorHistory[pageIndex];
+      } 
+      // If we're going to the next new page
+      else if (pageIndex === cursorHistory.length && nextCursor) {
+        cursor = nextCursor;
+        needsToUpdateHistory = true;
+      } 
+      // Invalid page request
+      else {
+        setFetchLoading(false);
+        return;
+      }
+      
+      const { data } = await fetchMore({
+        variables: {
+          batch,
+          section: section === 'All' ? null : section,
+          limit: 20,
+          cursor,
+        },
+      });
+
+      if (data) {
+        const newStudents = data.paginatedStudents.students;
+        const newCursor = data.paginatedStudents.nextCursor;
   
         setStudents(newStudents);
         setNextCursor(newCursor);
-  
-        // Update cursor history only if it's a new page
-        if (cursorHistory.length === pageIndex + 1 && newCursor) {
-          setCursorHistory([...cursorHistory, newCursor]);
-        }
-  
         setPage(pageIndex);
-        setFetchLoading(false);
-        return fetchMoreResult;
-      },
-    });
+        
+        // Only update cursor history if this is a new page
+        if (needsToUpdateHistory) {
+          setCursorHistory(prev => [...prev, newCursor]);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching more data:', error);
+    } finally {
+      setFetchLoading(false);
+    }
   };
   
 
@@ -175,7 +286,7 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
 
     // Fetch all paginated data
     while (true) {
-      const { data } = await client.query({
+      const { data }: { data: any } = await client.query({
         query: GET_PAGINATED_STUDENTS,
         variables: {
           batch,
@@ -186,8 +297,8 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
         fetchPolicy: 'network-only', // ensures fresh fetch
       });
 
-      const newStudents = data.paginatedStudents.students;
-      const nextCursor = data.paginatedStudents.nextCursor;
+      const newStudents: Student[] = data.paginatedStudents.students;
+      const nextCursor: string | null = data.paginatedStudents.nextCursor;
 
       allStudents = [...allStudents, ...newStudents];
 
@@ -252,10 +363,7 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
     return <p className="text-center p-8 text-red-500 font-semibold">Error: {error.message}</p>;
 
   const filteredStudents = students.filter((student: Student) => {
-    const matchesSearch =
-      student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      student.rollNumber.toLowerCase().includes(searchQuery.toLowerCase());
-
+    // Server-side search is now handled by GraphQL query, so no need for client-side search filtering
     const studentSection = student.section?.toUpperCase() ?? '';
     const isSDE = SDE_SECTIONS.includes(studentSection);
 
@@ -266,7 +374,7 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
     if (filter === 'SDE' && !isSDE) return false;
     if (filter === 'Non-SDE' && isSDE) return false;
 
-    return matchesSearch;
+    return true; // All search filtering is now done server-side
   });
 
 
@@ -324,6 +432,16 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
             </div>
           </div>
 
+          {/* Search Results Indicator */}
+          {isSearching && (
+            <div className="text-center text-gray-400 text-sm">
+              {students.length === 0 ? 
+                `No results found for "${searchQuery}"` : 
+                `Found ${students.length} result${students.length === 1 ? '' : 's'} for "${searchQuery}"`
+              }
+            </div>
+          )}
+
           {/* Leaderboard Cards */}
           <div className="space-y-4">
             {filteredStudents.map((student: Student, index: number) => (
@@ -331,7 +449,9 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
                 key={student.id}
                 className="grid grid-cols-[0.5fr_2fr_1.2fr_1fr_1.5fr_1fr_1fr_1fr] gap-4 items-center px-6 py-4 bg-[#1f1f1f] rounded-xl shadow-md border border-[#f59e0b40]"
               >
-                <div className="text-center text-sm font-semibold text-gray-300">{index + 1}</div>
+                <div className="text-center text-sm font-semibold text-gray-300">
+                  {isSearching ? index + 1 : (page * 20) + index + 1}
+                </div>
                 <div className="flex items-center gap-4 min-w-0">
                   <div className="w-10 h-10 rounded-full bg-[#fcd9b8] text-black font-bold flex items-center justify-center text-sm">
                     {student.name[0]}
@@ -369,7 +489,7 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
               </div>
             ))}
           </div>
-          {students.length > 0 && (
+          {students.length > 0 && !isSearching && (
   <div className="flex justify-center mt-6 gap-2">
     {cursorHistory.map((_, index) => (
       <button
@@ -395,7 +515,7 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
 
     {nextCursor && (
       <button
-        onClick={() => !fetchLoading && handlePageChange(page + 1)}
+        onClick={() => !fetchLoading && handlePageChange(cursorHistory.length)}
         disabled={fetchLoading}
         className="px-3 py-1.5 rounded border text-sm font-semibold bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
       >
@@ -651,7 +771,7 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
                 );
               })}
           </div>
-          {students.length > 0 && (
+          {students.length > 0 && !isSearching && (
   <div className="flex justify-center mt-6 gap-2">
     {cursorHistory.map((_, index) => (
       <button
@@ -677,14 +797,14 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
 
     {nextCursor && (
       <button
-        onClick={() => !fetchLoading && handlePageChange(page + 1)}
+        onClick={() => !fetchLoading && handlePageChange(cursorHistory.length)}
         disabled={fetchLoading}
         className="px-3 py-1.5 rounded border text-sm font-semibold bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {fetchLoading ? (
           <svg className="animate-spin h-4 w-4 mx-auto" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 11-8 8z" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 812-8v4l3-3-3-3v4a8 8 0 11-8 8z" />
           </svg>
         ) : (
           'Next →'
