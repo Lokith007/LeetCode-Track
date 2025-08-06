@@ -1,8 +1,7 @@
 'use client';
 import client from '@/lib/apollo-client';
 import { gql, useQuery } from '@apollo/client';
-import { useState } from 'react';
-
+import {  useState, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import { useRouter } from 'next/navigation';
 
@@ -103,6 +102,7 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
 
   const [activeTab, setActiveTab] = useState<'dashboard' | 'contests'>('dashboard');
   const [contestTab, setContestTab] = useState<'attended' | 'not-attended'>('attended');
+  const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<'All' | 'SDE' | 'Non-SDE'>('All');
   const [sortBy, setSortBy] = useState<string>('');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -111,7 +111,7 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
 
   const [fetchLoading, setFetchLoading] = useState(false);
   
-  const { loading, error, data, refetch } = useQuery(GET_PAGINATED_STUDENTS, {
+  const { loading, error, fetchMore, data } = useQuery(GET_PAGINATED_STUDENTS, {
     variables: {
       batch,
       section: section === 'All' ? null : section,
@@ -127,66 +127,39 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
       setCursorHistory([null]); // First page always starts at null
     },
   });
-
-
   
   const handlePageChange = async (pageIndex: number) => {
-
     let cursor = cursorHistory[pageIndex];
     if (pageIndex === cursorHistory.length && nextCursor) {
       cursor = nextCursor;
       setCursorHistory([...cursorHistory, nextCursor]);
     }
     setFetchLoading(true);
-    
-    try {
-      let cursor: string | null = null;
-      let needsToUpdateHistory = false;
-      
-      // If we're going to a page that exists in our history
-      if (pageIndex < cursorHistory.length) {
-        cursor = cursorHistory[pageIndex];
-      } 
-      // If we're going to the next new page
-      else if (pageIndex === cursorHistory.length && nextCursor) {
-        cursor = nextCursor;
-        needsToUpdateHistory = true;
-      } 
-      // Invalid page request
-      else {
-        setFetchLoading(false);
-        return;
-      }
-      
-      const { data } = await client.query({
-        query: GET_PAGINATED_STUDENTS,
-        variables: {
-          batch,
-          section: section === 'All' ? null : section,
-          limit: 20,
-          cursor,
-        },
-        fetchPolicy: 'network-only',
-      });
-
-      if (data) {
-        const newStudents = data.paginatedStudents.students;
-        const newCursor = data.paginatedStudents.nextCursor;
+  
+    fetchMore({
+      variables: {
+        batch,
+        section: section === 'All' ? null : section,
+        limit: 20,
+        cursor,
+      },
+      updateQuery: (_, { fetchMoreResult }) => {
+        const newStudents = fetchMoreResult.paginatedStudents.students;
+        const newCursor = fetchMoreResult.paginatedStudents.nextCursor;
   
         setStudents(newStudents);
         setNextCursor(newCursor);
-        setPage(pageIndex);
-        
-        // Only update cursor history if this is a new page
-        if (needsToUpdateHistory) {
-          setCursorHistory(prev => [...prev, newCursor]);
+  
+        // Update cursor history only if it's a new page
+        if (cursorHistory.length === pageIndex + 1 && newCursor) {
+          setCursorHistory([...cursorHistory, newCursor]);
         }
-      }
-    } catch (error) {
-      console.error('Error fetching more data:', error);
-    } finally {
-      setFetchLoading(false);
-    }
+  
+        setPage(pageIndex);
+        setFetchLoading(false);
+        return fetchMoreResult;
+      },
+    });
   };
   
 
@@ -208,7 +181,7 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
 
     // Fetch all paginated data
     while (true) {
-      const { data }: { data: any } = await client.query({
+      const { data } = await client.query({
         query: GET_PAGINATED_STUDENTS,
         variables: {
           batch,
@@ -219,8 +192,8 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
         fetchPolicy: 'network-only', // ensures fresh fetch
       });
 
-      const newStudents: Student[] = data.paginatedStudents.students;
-      const nextCursor: string | null = data.paginatedStudents.nextCursor;
+      const newStudents = data.paginatedStudents.students;
+      const nextCursor = data.paginatedStudents.nextCursor;
 
       allStudents = [...allStudents, ...newStudents];
 
@@ -285,7 +258,10 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
     return <p className="text-center p-8 text-red-500 font-semibold">Error: {error.message}</p>;
 
   const filteredStudents = students.filter((student: Student) => {
-    // SDE/Non-SDE filtering only
+    const matchesSearch =
+      student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      student.rollNumber.toLowerCase().includes(searchQuery.toLowerCase());
+
     const studentSection = student.section?.toUpperCase() ?? '';
     const isSDE = SDE_SECTIONS.includes(studentSection);
 
@@ -296,7 +272,7 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
     if (filter === 'SDE' && !isSDE) return false;
     if (filter === 'Non-SDE' && isSDE) return false;
 
-    return true;
+    return matchesSearch;
   });
 
 
@@ -337,8 +313,16 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
 
       {activeTab === "dashboard" && (
         <div className="space-y-6">
-          {/* Filter */}
-          <div className="flex justify-end gap-4">
+          {/* Search + Filter */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <input
+              type="text"
+              placeholder="Search by name or roll number..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full sm:w-1/3 px-4 py-2 rounded-md bg-[#1f1f1f] text-sm text-gray-200 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-[#fcd9b8]"
+            />
+
             <div className="flex gap-2">
               {["All", "SDE", "Non-SDE"].map((type) => (
                 <button
@@ -364,8 +348,7 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
                 className="grid grid-cols-[0.5fr_2fr_1.2fr_1fr_1.5fr_1fr_1fr_1fr] gap-4 items-center px-6 py-4 bg-[#1f1f1f] rounded-xl shadow-md border border-[#f59e0b40]"
               >
                 <div className="text-center text-sm font-semibold text-gray-300">
-                  {(page * 20) + index + 1}
-
+                  {page * 20 + (index + 1)}
                 </div>
                 <div className="flex items-center gap-4 min-w-0">
                   <div className="w-10 h-10 rounded-full bg-[#fcd9b8] text-black font-bold flex items-center justify-center text-sm">
@@ -425,47 +408,45 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
             ))}
           </div>
           {students.length > 0 && (
-  <div className="flex justify-center mt-6 gap-2">
-    {cursorHistory.map((_, index) => (
-      <button
-        key={index}
-        onClick={() => !fetchLoading && handlePageChange(index)}
-        disabled={fetchLoading}
-        className={`px-3 py-1.5 rounded border text-sm font-semibold transition-all duration-200 
-          ${page === index
-            ? 'bg-[#fcd9b8] text-black'
-            : 'bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700'} 
-          ${fetchLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-      >
-        {fetchLoading && page === index ? (
-          <svg className="animate-spin h-4 w-4 mx-auto" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 11-8 8z" />
-          </svg>
-        ) : (
-          index + 1
-        )}
-      </button>
-    ))}
-
-    {nextCursor && (
-      <button
-        onClick={() => !fetchLoading && handlePageChange(cursorHistory.length)}
-        disabled={fetchLoading}
-        className="px-3 py-1.5 rounded border text-sm font-semibold bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {fetchLoading ? (
-          <svg className="animate-spin h-4 w-4 mx-auto" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 812-8v4l3-3-3-3v4a8 8 0 11-8 8z" />
-          </svg>
-        ) : (
-          'Next →'
-        )}
-      </button>
-    )}
-  </div>
-)}
+            <div className="flex justify-center mt-6 gap-2">
+              {cursorHistory.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => !fetchLoading && handlePageChange(index)}
+                  disabled={fetchLoading}
+                  className={`px-3 py-1.5 rounded border text-sm font-semibold transition-all duration-200 
+          ${
+            page === index
+              ? "bg-[#fcd9b8] text-black"
+              : "bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700"
+          } 
+          ${fetchLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                  {fetchLoading && page === index ? (
+                    <svg
+                      className="animate-spin h-4 w-4 mx-auto"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        fill="none"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 11-8 8z"
+                      />
+                    </svg>
+                  ) : (
+                    index + 1
+                  )}
+                </button>
+              ))}
 
               {nextCursor && (
                 <button
@@ -542,6 +523,10 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
             <div className="flex gap-2">
               {["attended", "not-attended"].map((tab) => {
                 const isActive = contestTab === tab;
+                const attendedCount = students.filter((s: Student) =>
+                  s.latestContests.some((c) => c.data.attempted)
+                ).length;
+                const notAttendedCount = students.length - attendedCount;
 
                 return (
                   <button
@@ -555,8 +540,9 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
                         : "bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700"
                     }`}
                   >
-                    {tab === 'attended' ? 'Attended' : 'Not Attended'}
-
+                    {tab === "attended"
+                      ? `Attended (${attendedCount})`
+                      : `Not Attended (${notAttendedCount})`}
                   </button>
                 );
               })}
@@ -766,51 +752,45 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
               })}
           </div>
           {students.length > 0 && (
-  <div className="flex justify-center mt-6 gap-2">
-    {cursorHistory.map((_, index) => (
-      <button
-        key={index}
-        onClick={() => !fetchLoading && handlePageChange(index)}
-        disabled={fetchLoading}
-        className={`px-3 py-1.5 rounded border text-sm font-semibold transition-all duration-200 
-          ${page === index
-            ? 'bg-[#fcd9b8] text-black'
-            : 'bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700'} 
-          ${fetchLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-      >
-        {fetchLoading && page === index ? (
-          <svg className="animate-spin h-4 w-4 mx-auto" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 11-8 8z" />
-          </svg>
-        ) : (
-          index + 1
-        )}
-      </button>
-    ))}
-
-    {nextCursor && (
-      <button
-        onClick={() => !fetchLoading && handlePageChange(cursorHistory.length)}
-        disabled={fetchLoading}
-        className="px-3 py-1.5 rounded border text-sm font-semibold bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {fetchLoading ? (
-          <svg className="animate-spin h-4 w-4 mx-auto" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 812-8v4l3-3-3-3v4a8 8 0 11-8 8z" />
-          </svg>
-        ) : (
-          'Next →'
-        )}
-      </button>
-    )}
-  </div>
-)}
-
-
-
-
+            <div className="flex justify-center mt-6 gap-2">
+              {cursorHistory.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => !fetchLoading && handlePageChange(index)}
+                  disabled={fetchLoading}
+                  className={`px-3 py-1.5 rounded border text-sm font-semibold transition-all duration-200 
+          ${
+            page === index
+              ? "bg-[#fcd9b8] text-black"
+              : "bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700"
+          } 
+          ${fetchLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                  {fetchLoading && page === index ? (
+                    <svg
+                      className="animate-spin h-4 w-4 mx-auto"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        fill="none"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 11-8 8z"
+                      />
+                    </svg>
+                  ) : (
+                    index + 1
+                  )}
+                </button>
+              ))}
 
               {nextCursor && (
                 <button
