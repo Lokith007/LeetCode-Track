@@ -1,8 +1,9 @@
 'use client';
 import client from '@/lib/apollo-client';
 import { gql, useQuery } from '@apollo/client';
-import {  useState } from 'react';
+import {  useState, useEffect } from 'react';
 import * as XLSX from 'xlsx';
+import { useRouter } from 'next/navigation';
 
 interface LeaderboardEntry {
   student: Student;
@@ -95,6 +96,7 @@ type LeaderboardProps = {
 };
 
 const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
+  const router = useRouter();
   const [students, setStudents] = useState<Student[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
 
@@ -126,8 +128,12 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
     },
   });
   
-  const handlePageChange = async (pageIndex) => {
-    const cursor = cursorHistory[pageIndex];
+  const handlePageChange = async (pageIndex: number) => {
+    let cursor = cursorHistory[pageIndex];
+    if (pageIndex === cursorHistory.length && nextCursor) {
+      cursor = nextCursor;
+      setCursorHistory([...cursorHistory, nextCursor]);
+    }
     setFetchLoading(true);
   
     fetchMore({
@@ -274,29 +280,38 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
 
   return (
     <div className="min-h-screen px-4 py-10 bg-[#121212] text-gray-200 space-y-10">
+      <button
+        onClick={() => { router.back(); }}
+        className={`px-6 py-2 rounded-lg font-semibold transition-all duration-200 shadow-sm border text-sm
+            bg-[#1f1f1f] border-gray-700 text-gray-300 hover:bg-gray-700
+              }`}
+      >
+        {"<-"}
+      </button>
       {/* Tabs */}
       <div className="flex justify-start gap-4">
-        {['dashboard', 'contests'].map((tab) => (
+        {["dashboard", "contests"].map((tab) => (
           <button
             key={tab}
-            onClick={() => setActiveTab(tab as 'dashboard' | 'contests')}
-            className={`px-6 py-2 rounded-lg font-semibold transition-all duration-200 shadow-sm border text-sm ${activeTab === tab
-              ? 'bg-[#fcd9b8] text-black'
-              : 'bg-[#1f1f1f] border-gray-700 text-gray-300 hover:bg-gray-700'
-              }`}
+            onClick={() => setActiveTab(tab as "dashboard" | "contests")}
+            className={`px-6 py-2 rounded-lg font-semibold transition-all duration-200 shadow-sm border text-sm ${
+              activeTab === tab
+                ? "bg-[#fcd9b8] text-black"
+                : "bg-[#1f1f1f] border-gray-700 text-gray-300 hover:bg-gray-700"
+            }`}
           >
-            {tab === 'dashboard' ? 'Dashboard' : 'Latest Contest'}
+            {tab === "dashboard" ? "Dashboard" : "Latest Contest"}
           </button>
         ))}
         <button
-          onClick={() => setView('contest')}
+          onClick={() => setView("contest")}
           className="px-6 py-2 rounded-lg font-semibold transition-all duration-200 shadow-sm border text-sm bg-[#1f1f1f] border-gray-700 text-gray-300 hover:bg-gray-700"
         >
           History Contests
         </button>
       </div>
 
-      {activeTab === 'dashboard' && (
+      {activeTab === "dashboard" && (
         <div className="space-y-6">
           {/* Search + Filter */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -309,14 +324,15 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
             />
 
             <div className="flex gap-2">
-              {['All', 'SDE', 'Non-SDE'].map((type) => (
+              {["All", "SDE", "Non-SDE"].map((type) => (
                 <button
                   key={type}
-                  onClick={() => setFilter(type as 'All' | 'SDE' | 'Non-SDE')}
-                  className={`px-4 py-2 rounded-lg text-sm font-semibold border shadow-sm ${filter === type
-                    ? 'bg-[#fcd9b8] text-black'
-                    : 'bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700'
-                    }`}
+                  onClick={() => setFilter(type as "All" | "SDE" | "Non-SDE")}
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold border shadow-sm ${
+                    filter === type
+                      ? "bg-[#fcd9b8] text-black"
+                      : "bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700"
+                  }`}
                 >
                   {type}
                 </button>
@@ -331,97 +347,150 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
                 key={student.id}
                 className="grid grid-cols-[0.5fr_2fr_1.2fr_1fr_1.5fr_1fr_1fr_1fr] gap-4 items-center px-6 py-4 bg-[#1f1f1f] rounded-xl shadow-md border border-[#f59e0b40]"
               >
-                <div className="text-center text-sm font-semibold text-gray-300">{index + 1}</div>
+                <div className="text-center text-sm font-semibold text-gray-300">
+                  {page * 20 + (index + 1)}
+                </div>
                 <div className="flex items-center gap-4 min-w-0">
                   <div className="w-10 h-10 rounded-full bg-[#fcd9b8] text-black font-bold flex items-center justify-center text-sm">
                     {student.name[0]}
                   </div>
                   <div className="min-w-0">
-                    <div className="font-semibold text-base truncate">{student.name}</div>
-                    <div className="text-sm text-gray-400 truncate">@{student.rollNumber}</div>
+                    <div className="font-semibold text-base truncate">
+                      {student.name}
+                    </div>
+                    <div className="text-sm text-gray-400 truncate">
+                      @{student.rollNumber}
+                    </div>
                   </div>
                 </div>
-                <div className="text-center text-sm text-gray-300 truncate">{student.rollNumber}</div>
-                <div className="text-center text-sm text-gray-300">{student.section}</div>
+                <div className="text-center text-sm text-gray-300 truncate">
+                  {student.rollNumber}
+                </div>
+                <div className="text-center text-sm text-gray-300">
+                  {student.section}
+                </div>
                 <div className="w-full p-2 rounded-xl shadow text-center space-y-1 bg-[#2a2a2a]">
                   <div className="text-sm font-semibold text-[#fcd9b8]">
                     {student.totalSolved ?? 0}
                   </div>
                   <div className="text-[11px] text-gray-400">Solved</div>
                   <div className="grid grid-cols-3 gap-1 text-[10px] text-white font-medium">
-                    <div className="bg-green-500 rounded py-0.5">{student.easySolved ?? 0}</div>
-                    <div className="bg-yellow-500 rounded py-0.5">{student.mediumSolved ?? 0}</div>
-                    <div className="bg-red-500 rounded py-0.5">{student.hardSolved ?? 0}</div>
+                    <div className="bg-green-500 rounded py-0.5">
+                      {student.easySolved ?? 0}
+                    </div>
+                    <div className="bg-yellow-500 rounded py-0.5">
+                      {student.mediumSolved ?? 0}
+                    </div>
+                    <div className="bg-red-500 rounded py-0.5">
+                      {student.hardSolved ?? 0}
+                    </div>
                   </div>
                 </div>
                 <div className="text-center space-y-1">
-                  <div className="text-[#fcd9b8] font-bold text-lg">{student.rating?.toFixed(2) ?? '-'}</div>
+                  <div className="text-[#fcd9b8] font-bold text-lg">
+                    {student.rating?.toFixed(2) ?? "-"}
+                  </div>
                   <div className="text-xs text-gray-400">Rating</div>
                 </div>
                 <div className="text-center space-y-1">
-                  <div className="text-[#fcd9b8] font-medium">#{student.globalRanking ?? '-'}</div>
+                  <div className="text-[#fcd9b8] font-medium">
+                    #{student.globalRanking ?? "-"}
+                  </div>
                   <div className="text-xs text-gray-400">Rank</div>
                 </div>
                 <div className="text-center space-y-1">
-                  <div className="text-[#fcd9b8] font-semibold text-sm">{student.topPercentage ?? '-'}%</div>
+                  <div className="text-[#fcd9b8] font-semibold text-sm">
+                    {student.topPercentage ?? "-"}%
+                  </div>
                   <div className="text-xs text-gray-400">Top %</div>
                 </div>
               </div>
             ))}
           </div>
           {students.length > 0 && (
-  <div className="flex justify-center mt-6 gap-2">
-    {cursorHistory.map((_, index) => (
-      <button
-        key={index}
-        onClick={() => !fetchLoading && handlePageChange(index)}
-        disabled={fetchLoading}
-        className={`px-3 py-1.5 rounded border text-sm font-semibold transition-all duration-200 
-          ${page === index
-            ? 'bg-[#fcd9b8] text-black'
-            : 'bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700'} 
-          ${fetchLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-      >
-        {fetchLoading && page === index ? (
-          <svg className="animate-spin h-4 w-4 mx-auto" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 11-8 8z" />
-          </svg>
-        ) : (
-          index + 1
-        )}
-      </button>
-    ))}
+            <div className="flex justify-center mt-6 gap-2">
+              {cursorHistory.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => !fetchLoading && handlePageChange(index)}
+                  disabled={fetchLoading}
+                  className={`px-3 py-1.5 rounded border text-sm font-semibold transition-all duration-200 
+          ${
+            page === index
+              ? "bg-[#fcd9b8] text-black"
+              : "bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700"
+          } 
+          ${fetchLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                  {fetchLoading && page === index ? (
+                    <svg
+                      className="animate-spin h-4 w-4 mx-auto"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        fill="none"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 11-8 8z"
+                      />
+                    </svg>
+                  ) : (
+                    index + 1
+                  )}
+                </button>
+              ))}
 
-    {nextCursor && (
-      <button
-        onClick={() => !fetchLoading && handlePageChange(page + 1)}
-        disabled={fetchLoading}
-        className="px-3 py-1.5 rounded border text-sm font-semibold bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {fetchLoading ? (
-          <svg className="animate-spin h-4 w-4 mx-auto" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 11-8 8z" />
-          </svg>
-        ) : (
-          'Next →'
-        )}
-      </button>
-    )}
-  </div>
-)}
-
-
+              {nextCursor && (
+                <button
+                  onClick={() => !fetchLoading && handlePageChange(page + 1)}
+                  disabled={fetchLoading}
+                  className="px-3 py-1.5 rounded border text-sm font-semibold bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {fetchLoading ? (
+                    <svg
+                      className="animate-spin h-4 w-4 mx-auto"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        fill="none"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 11-8 8z"
+                      />
+                    </svg>
+                  ) : (
+                    "Next →"
+                  )}
+                </button>
+              )}
+            </div>
+          )}
         </div>
       )}
 
-      {activeTab === 'contests' && (
+      {activeTab === "contests" && (
         <div className="space-y-6">
+          
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <h1 className="text-xl text-[#fcd9b8] font-bold">
-                {students[0]?.latestContests?.[0]?.title ?? 'Latest Contest'}
+                {students[0]?.latestContests?.[0]?.title ?? "Latest Contest"}
               </h1>
               <button
                 onClick={exportLatestContestData}
@@ -431,17 +500,17 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
               </button>
             </div>
 
-
             {/* Filter Options */}
             <div className="flex gap-2">
-              {['All', 'SDE', 'Non-SDE'].map((type) => (
+              {["All", "SDE", "Non-SDE"].map((type) => (
                 <button
                   key={type}
-                  onClick={() => setFilter(type as 'All' | 'SDE' | 'Non-SDE')}
-                  className={`px-4 py-2 rounded-lg text-sm font-semibold border shadow-sm ${filter === type
-                    ? 'bg-[#fcd9b8] text-black'
-                    : 'bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700'
-                    }`}
+                  onClick={() => setFilter(type as "All" | "SDE" | "Non-SDE")}
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold border shadow-sm ${
+                    filter === type
+                      ? "bg-[#fcd9b8] text-black"
+                      : "bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700"
+                  }`}
                 >
                   {type}
                 </button>
@@ -452,7 +521,7 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
           {/* Contest Tab Controls */}
           <div className="flex items-center justify-end gap-4">
             <div className="flex gap-2">
-              {['attended', 'not-attended'].map((tab) => {
+              {["attended", "not-attended"].map((tab) => {
                 const isActive = contestTab === tab;
                 const attendedCount = students.filter((s: Student) =>
                   s.latestContests.some((c) => c.data.attempted)
@@ -462,13 +531,16 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
                 return (
                   <button
                     key={tab}
-                    onClick={() => setContestTab(tab as 'attended' | 'not-attended')}
-                    className={`px-5 py-2 rounded-lg font-semibold text-sm border shadow-sm transition-all ${isActive
-                      ? 'bg-[#fcd9b8] text-black'
-                      : 'bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700'
-                      }`}
+                    onClick={() =>
+                      setContestTab(tab as "attended" | "not-attended")
+                    }
+                    className={`px-5 py-2 rounded-lg font-semibold text-sm border shadow-sm transition-all ${
+                      isActive
+                        ? "bg-[#fcd9b8] text-black"
+                        : "bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700"
+                    }`}
                   >
-                    {tab === 'attended'
+                    {tab === "attended"
                       ? `Attended (${attendedCount})`
                       : `Not Attended (${notAttendedCount})`}
                   </button>
@@ -482,33 +554,36 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
             <div>Name</div>
             <div
               className="cursor-pointer hover:text-[#fcd9b8] transition-colors text-center"
-              onClick={() => handleSort('score')}
+              onClick={() => handleSort("score")}
             >
-              Score {sortBy === 'score' && (sortOrder === 'asc' ? '↑' : '↓')}
+              Score {sortBy === "score" && (sortOrder === "asc" ? "↑" : "↓")}
             </div>
             <div
               className="cursor-pointer hover:text-[#fcd9b8] transition-colors text-center"
-              onClick={() => handleSort('oldRating')}
+              onClick={() => handleSort("oldRating")}
             >
-              Old Rating {sortBy === 'oldRating' && (sortOrder === 'asc' ? '↑' : '↓')}
+              Old Rating{" "}
+              {sortBy === "oldRating" && (sortOrder === "asc" ? "↑" : "↓")}
             </div>
             <div
               className="cursor-pointer hover:text-[#fcd9b8] transition-colors text-center"
-              onClick={() => handleSort('newRating')}
+              onClick={() => handleSort("newRating")}
             >
-              Predicted {sortBy === 'newRating' && (sortOrder === 'asc' ? '↑' : '↓')}
+              Predicted{" "}
+              {sortBy === "newRating" && (sortOrder === "asc" ? "↑" : "↓")}
             </div>
             <div
               className="cursor-pointer hover:text-[#fcd9b8] transition-colors text-center"
-              onClick={() => handleSort('copied')}
+              onClick={() => handleSort("copied")}
             >
-              Code {sortBy === 'copied' && (sortOrder === 'asc' ? '↑' : '↓')}
+              Code {sortBy === "copied" && (sortOrder === "asc" ? "↑" : "↓")}
             </div>
             <div
               className="cursor-pointer hover:text-[#fcd9b8] transition-colors text-center"
-              onClick={() => handleSort('globalRanking')}
+              onClick={() => handleSort("globalRanking")}
             >
-              Rank {sortBy === 'globalRanking' && (sortOrder === 'asc' ? '↑' : '↓')}
+              Rank{" "}
+              {sortBy === "globalRanking" && (sortOrder === "asc" ? "↑" : "↓")}
             </div>
             <div className="text-center">Solved</div>
             <div className="text-center">Trend</div>
@@ -517,21 +592,23 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
           <div className="space-y-4">
             {students
               .filter((student: Student) => {
-                const studentSection = student.section?.toUpperCase() ?? '';
+                const studentSection = student.section?.toUpperCase() ?? "";
                 const isSDE = SDE_SECTIONS.includes(studentSection);
 
                 const sectionMatch =
-                  !section || section.toLowerCase() === 'all' || studentSection === section.toUpperCase();
+                  !section ||
+                  section.toLowerCase() === "all" ||
+                  studentSection === section.toUpperCase();
 
                 if (!sectionMatch) return false;
-                if (filter === 'SDE' && !isSDE) return false;
-                if (filter === 'Non-SDE' && isSDE) return false;
+                if (filter === "SDE" && !isSDE) return false;
+                if (filter === "Non-SDE" && isSDE) return false;
 
                 return true;
               })
               .map((student: Student): LeaderboardEntry | null => {
                 const contests = student.latestContests.filter((contest) =>
-                  contestTab === 'attended'
+                  contestTab === "attended"
                     ? contest.data.attempted || contest.data.available
                     : !contest.data.attempted && !contest.data.available
                 );
@@ -539,8 +616,10 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
                 const latest = contests[0];
                 if (!latest) return null;
 
-                const trend: 'UP' | 'DOWN' =
-                  latest.data.new_rating > latest.data.old_rating ? 'UP' : 'DOWN';
+                const trend: "UP" | "DOWN" =
+                  latest.data.new_rating > latest.data.old_rating
+                    ? "UP"
+                    : "DOWN";
 
                 return {
                   student,
@@ -561,20 +640,21 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
                 let aValue: any = a[sortBy as keyof LeaderboardEntry];
                 let bValue: any = b[sortBy as keyof LeaderboardEntry];
 
-                if (sortBy === 'copied') {
+                if (sortBy === "copied") {
                   aValue = aValue ? 1 : 0;
                   bValue = bValue ? 1 : 0;
                 }
 
-                if (typeof aValue === 'number' && typeof bValue === 'number') {
-                  return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
+                if (typeof aValue === "number" && typeof bValue === "number") {
+                  return sortOrder === "asc"
+                    ? aValue - bValue
+                    : bValue - aValue;
                 }
 
                 return 0;
               })
               .map((item) => {
                 const { student, latest, trend } = item;
-
 
                 return (
                   <div
@@ -586,46 +666,59 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
                         {student.name[0]}
                       </div>
                       <div>
-                        <div className="font-semibold text-base">{student.name}</div>
-                        <div className="text-sm text-gray-400">@{student.rollNumber}</div>
+                        <div className="font-semibold text-base">
+                          {student.name}
+                        </div>
+                        <div className="text-sm text-gray-400">
+                          @{student.rollNumber}
+                        </div>
                       </div>
                     </div>
 
                     <div className="text-center">
-                      <div className="font-bold text-lg">{latest.data.score ?? '-'}</div>
+                      <div className="font-bold text-lg">
+                        {latest.data.score ?? "-"}
+                      </div>
                       <div className="text-xs text-gray-400">Score</div>
                     </div>
 
                     <div className="text-center">
-                      <div className="font-bold text-lg">{latest.data.old_rating?.toFixed(2) ?? '-'}</div>
+                      <div className="font-bold text-lg">
+                        {latest.data.old_rating?.toFixed(2) ?? "-"}
+                      </div>
                       <div className="text-xs text-gray-400">Old Rating</div>
                     </div>
 
                     <div className="text-center">
-                      <div className="font-bold text-lg">{latest.data.new_rating?.toFixed(2) ?? '-'}</div>
+                      <div className="font-bold text-lg">
+                        {latest.data.new_rating?.toFixed(2) ?? "-"}
+                      </div>
                       <div className="text-xs text-gray-400">Predicted</div>
                     </div>
                     <div className="text-center">
                       <span
-                        className={`px-2 py-1 rounded-full text-xs font-bold ${latest.data.attempted
-                          ? latest.data.copied
-                            ? 'bg-red-500 text-white'
-                            : 'bg-green-500 text-white'
-                          : 'bg-gray-500 text-white'
-                          }`}
+                        className={`px-2 py-1 rounded-full text-xs font-bold ${
+                          latest.data.attempted
+                            ? latest.data.copied
+                              ? "bg-red-500 text-white"
+                              : "bg-green-500 text-white"
+                            : "bg-gray-500 text-white"
+                        }`}
                       >
                         {latest.data.attempted
                           ? latest.data.copied
-                            ? 'Copied'
-                            : 'Original'
-                          : 'Unknown'}
+                            ? "Copied"
+                            : "Original"
+                          : "Unknown"}
                       </span>
 
                       <div className="text-xs text-gray-400 mt-1">Code</div>
                     </div>
 
                     <div className="text-center">
-                      <div className="text-md font-medium text-[#fcd9b8]">#{student.globalRanking ?? '-'}</div>
+                      <div className="text-md font-medium text-[#fcd9b8]">
+                        #{student.globalRanking ?? "-"}
+                      </div>
                       <div className="text-xs text-gray-400">Rank</div>
                     </div>
 
@@ -635,69 +728,103 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
                       </div>
                       <div className="text-[11px] text-gray-400">Solved</div>
                       <div className="grid grid-cols-3 gap-1 text-[10px] text-white font-medium">
-                        <div className="bg-green-500 rounded py-1">{latest.data.easySolved ?? 0}</div>
-                        <div className="bg-yellow-500 rounded py-1">{latest.data.mediumSolved ?? 0}</div>
-                        <div className="bg-red-500 rounded py-1">{latest.data.hardSolved ?? 0}</div>
+                        <div className="bg-green-500 rounded py-1">
+                          {latest.data.easySolved ?? 0}
+                        </div>
+                        <div className="bg-yellow-500 rounded py-1">
+                          {latest.data.mediumSolved ?? 0}
+                        </div>
+                        <div className="bg-red-500 rounded py-1">
+                          {latest.data.hardSolved ?? 0}
+                        </div>
                       </div>
                     </div>
 
                     <div
-                      className={`font-semibold text-sm text-center ${trend === 'UP' ? 'text-green-400' : 'text-red-400'
-                        }`}
+                      className={`font-semibold text-sm text-center ${
+                        trend === "UP" ? "text-green-400" : "text-red-400"
+                      }`}
                     >
-                      {trend === 'UP' ? '↑ UP' : '↓ DOWN'}
+                      {trend === "UP" ? "↑ UP" : "↓ DOWN"}
                     </div>
                   </div>
                 );
               })}
           </div>
           {students.length > 0 && (
-  <div className="flex justify-center mt-6 gap-2">
-    {cursorHistory.map((_, index) => (
-      <button
-        key={index}
-        onClick={() => !fetchLoading && handlePageChange(index)}
-        disabled={fetchLoading}
-        className={`px-3 py-1.5 rounded border text-sm font-semibold transition-all duration-200 
-          ${page === index
-            ? 'bg-[#fcd9b8] text-black'
-            : 'bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700'} 
-          ${fetchLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-      >
-        {fetchLoading && page === index ? (
-          <svg className="animate-spin h-4 w-4 mx-auto" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 11-8 8z" />
-          </svg>
-        ) : (
-          index + 1
-        )}
-      </button>
-    ))}
+            <div className="flex justify-center mt-6 gap-2">
+              {cursorHistory.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => !fetchLoading && handlePageChange(index)}
+                  disabled={fetchLoading}
+                  className={`px-3 py-1.5 rounded border text-sm font-semibold transition-all duration-200 
+          ${
+            page === index
+              ? "bg-[#fcd9b8] text-black"
+              : "bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700"
+          } 
+          ${fetchLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                  {fetchLoading && page === index ? (
+                    <svg
+                      className="animate-spin h-4 w-4 mx-auto"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        fill="none"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 11-8 8z"
+                      />
+                    </svg>
+                  ) : (
+                    index + 1
+                  )}
+                </button>
+              ))}
 
-    {nextCursor && (
-      <button
-        onClick={() => !fetchLoading && handlePageChange(page + 1)}
-        disabled={fetchLoading}
-        className="px-3 py-1.5 rounded border text-sm font-semibold bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {fetchLoading ? (
-          <svg className="animate-spin h-4 w-4 mx-auto" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 11-8 8z" />
-          </svg>
-        ) : (
-          'Next →'
-        )}
-      </button>
-    )}
-  </div>
-)}
-
-
-
-
-
+              {nextCursor && (
+                <button
+                  onClick={() => !fetchLoading && handlePageChange(page + 1)}
+                  disabled={fetchLoading}
+                  className="px-3 py-1.5 rounded border text-sm font-semibold bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {fetchLoading ? (
+                    <svg
+                      className="animate-spin h-4 w-4 mx-auto"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        fill="none"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 11-8 8z"
+                      />
+                    </svg>
+                  ) : (
+                    "Next →"
+                  )}
+                </button>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
