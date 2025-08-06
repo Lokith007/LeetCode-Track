@@ -113,7 +113,7 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
   
 
   
-  const { loading, error, data, refetch } = useQuery(GET_PAGINATED_STUDENTS, {
+  const { loading, error, fetchMore, data } = useQuery(GET_PAGINATED_STUDENTS, {
     variables: {
       batch,
       section: section === 'All' ? null : section,
