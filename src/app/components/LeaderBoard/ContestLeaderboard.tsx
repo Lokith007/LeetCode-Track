@@ -86,9 +86,7 @@ const ContestLeaderboard = ({ batch, contests, setView}: ContestLeaderboardProps
                         : 'bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700'
               }`}
             >
-              {mode === 'attended'
-                ? `Attended (${leaderboard?.participants?.length || 0})`
-                : `Not Attended (${leaderboard?.nonParticipants?.length || 0})`}
+              {mode === 'attended' ? 'Attended' : 'Not Attended'}
             </button>
           ))}
         </div>
