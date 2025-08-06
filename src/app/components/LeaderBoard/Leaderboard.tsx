@@ -469,10 +469,6 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
             <div className="flex gap-2">
               {['attended', 'not-attended'].map((tab) => {
                 const isActive = contestTab === tab;
-                const attendedCount = students.filter((s: Student) =>
-                  s.latestContests.some((c) => c.data.attempted)
-                ).length;
-                const notAttendedCount = students.length - attendedCount;
 
                 return (
                   <button
@@ -483,9 +479,7 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
                       : 'bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700'
                       }`}
                   >
-                    {tab === 'attended'
-                      ? `Attended (${attendedCount})`
-                      : `Not Attended (${notAttendedCount})`}
+                    {tab === 'attended' ? 'Attended' : 'Not Attended'}
                   </button>
                 );
               })}
