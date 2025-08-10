@@ -1,9 +1,11 @@
 'use client';
 import client from '@/lib/apollo-client';
 import { gql, useQuery } from '@apollo/client';
-import {  useState, useEffect } from 'react';
+import {  useState } from 'react';
 import * as XLSX from 'xlsx';
 import { useRouter } from 'next/navigation';
+
+
 
 interface LeaderboardEntry {
   student: Student;
@@ -47,6 +49,12 @@ interface Student {
       savedAt: string;
     };
   }>;
+}
+interface PaginatedStudentResponse {
+  paginatedStudents: {
+    students: Student[];
+    nextCursor: string ; // if it can be null at the end
+  };
 }
 
 const GET_PAGINATED_STUDENTS = gql`
