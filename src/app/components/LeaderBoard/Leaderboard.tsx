@@ -185,37 +185,38 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
       setSortOrder('desc');
     }
   };
-  const exportLatestContestData = async () => {
-    let allStudents: Student[] = [];
-    let currentCursor: string | null = null;
 
-    // Fetch all paginated data
+  const exportLatestContestData = async () => {
+    let allStudents = [];
+    let currentCursor = null;
+  
+    // 1. Fetch all paginated students
     while (true) {
       const { data } = await client.query({
         query: GET_PAGINATED_STUDENTS,
         variables: {
           batch,
           section: section === 'All' ? null : section,
-          limit: 100, // you can adjust the batch size
+          limit: 100,
           cursor: currentCursor,
         },
-        fetchPolicy: 'network-only', // ensures fresh fetch
+        fetchPolicy: 'network-only',
       });
-
+  
       const newStudents = data.paginatedStudents.students;
       const nextCursor = data.paginatedStudents.nextCursor;
-
+  
       allStudents = [...allStudents, ...newStudents];
-
       if (!nextCursor) break;
       currentCursor = nextCursor;
     }
-
+  
+    // 2. Filter and map
     const exportData = allStudents
-      .filter((student: Student) => {
+      .filter((student) => {
         const studentSection = student.section?.toUpperCase() ?? '';
         const isSDE = SDE_SECTIONS.includes(studentSection);
-
+  
         const sectionMatch =
           !section || section.toLowerCase() === 'all' || studentSection === section.toUpperCase();
         if (!sectionMatch) return false;
@@ -223,17 +224,17 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
         if (filter === 'Non-SDE' && isSDE) return false;
         return true;
       })
-      .map((student: Student) => {
+      .map((student) => {
         const contests = student.latestContests.filter((contest) =>
           contestTab === 'attended'
             ? contest.data.attempted || contest.data.available
             : !contest.data.attempted && !contest.data.available
         );
-        const latest = contests.find(c => c.title === "weekly-contest-462");
+        const latest = contests.find((c) => c.title === 'weekly-contest-462');
         if (!latest) return null;
-
+  
         const trend = latest.data.new_rating > latest.data.old_rating ? 'UP' : 'DOWN';
-
+  
         return {
           Name: student.name,
           RollNumber: student.rollNumber,
@@ -251,12 +252,27 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
         };
       })
       .filter(Boolean);
-
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
+  
+    // 3. Group by Section
+    const groupedBySection = exportData.reduce((acc, row) => {
+      const sec = row.Section || 'Unknown';
+      if (!acc[sec]) acc[sec] = [];
+      acc[sec].push(row);
+      return acc;
+    }, {});
+  
+    // 4. Create workbook and append each section as a separate sheet
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'LatestContest');
-    XLSX.writeFile(workbook, 'LatestContestLeaderboard.xlsx');
+  
+    Object.keys(groupedBySection).forEach((sec) => {
+      const worksheet = XLSX.utils.json_to_sheet(groupedBySection[sec]);
+      XLSX.utils.book_append_sheet(workbook, worksheet, sec.substring(0, 31)); // Excel sheet name limit
+    });
+  
+    // 5. Save file
+    XLSX.writeFile(workbook, 'SectionWise-LatestContest.xlsx');
   };
+  
 
 
   if (loading)

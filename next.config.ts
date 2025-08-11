@@ -8,6 +8,14 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true, // ✅ skip ESLint errors during build
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'cdn.codechef.com',
+      },
+    ],
+  },
 };
 
 export default nextConfig;

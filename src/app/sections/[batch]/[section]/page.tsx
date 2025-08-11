@@ -10,7 +10,7 @@ const LeetCodeSections = ({
 }: {
   params: Promise<{ batch: string; section: string }>;
 }) => {
-  const { batch, section } = use(params);
+  const { batch, section  } = use(params);
   const router = useRouter(); // ✅ hook from App Router
 
   const cseSections = Array.from({ length: parseInt(section) }, (_, i) => ({
@@ -20,7 +20,7 @@ const LeetCodeSections = ({
 
   const handleSectionClick = (sectionName?: string) => {
     const formatted = sectionName ? sectionName.replace(/\s+/g, "-") : "all";
-    router.push(`/leaderboard/${batch}/${formatted}`);
+    router.push(`/platform/${batch}/${formatted}`);
   };
 
   const isSDESection = (name: string) => {
