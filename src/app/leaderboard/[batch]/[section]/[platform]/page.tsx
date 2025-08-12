@@ -5,6 +5,7 @@ import { gql, useQuery } from '@apollo/client';
 import Leaderboard from '../../../../components/LeaderBoard/Leaderboard';
 import ContestLeaderboard from '../../../../components/LeaderBoard/ContestLeaderboard';
 import CodeChefPage from '@/app/components/LeaderBoard/CodeChefPage';
+import CodeForcesPage from '@/app/components/LeaderBoard/CodeForcesPage';
 
 const GET_ALL_CONTESTS = gql`
   query GetAllContests($batch: String!) {
@@ -53,14 +54,23 @@ const LeaderboardPage = ({
           )}
         </div>
       </div>
-    ) : (
+    ) : platform === 'codechef' ? (
       <>
         <CodeChefPage batch={batch} section={section}/>
       </>
+    ) : platform === 'codeforces' ? (
+      <>
+        <CodeForcesPage batch={batch} section={section}/>
+      </>
+    ) : (
+      <div className="min-h-screen bg-[#121212] text-gray-300 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Platform Not Found</h1>
+          <p className="text-gray-400">The requested platform is not supported.</p>
+        </div>
+      </div>
     )
   );
-
-
 };
 
 export default LeaderboardPage;

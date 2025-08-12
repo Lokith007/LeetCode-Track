@@ -7,8 +7,8 @@ import { AuthProvider } from './components/AuthProvider';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'LeetCode Tracker',
-  description: 'Track your college batches LeetCode progress',
+  title: 'Competitive Programming Tracker',
+  description: 'Track your college batches competitive programming progress across multiple platforms',
 };
 
 export default function RootLayout({

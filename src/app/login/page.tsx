@@ -31,7 +31,7 @@ export default function LoginPage() {
             <Lock className="h-8 w-8 text-black" />
           </div>
           <CardTitle className="text-2xl font-bold text-[#f59e0b]">Welcome Back</CardTitle>
-          <p className="text-gray-400 mt-2 text-sm">Sign in to access your LeetCode Tracker</p>
+          <p className="text-gray-400 mt-2 text-sm">Sign in to access your Competitive Programming Tracker</p>
         </CardHeader>
 
         <CardContent>
