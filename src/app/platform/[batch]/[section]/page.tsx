@@ -14,7 +14,7 @@ const Page = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#121212] flex items-center justify-center gap-8 ">
+    <div className="min-h-screen bg-[#121212] flex items-center justify-center gap-8 flex-wrap p-8">
       {/* LeetCode Card */}
       <div
         onClick={() => handleClick("leetcode")}
@@ -31,6 +31,15 @@ const Page = () => {
       >
         <span className="text-xl font-bold text-gray-700">CodeChef</span>
         <p className="text-sm text-gray-500 mt-2">Sharpen Skills</p>
+      </div>
+
+      {/* CodeForces Card */}
+      <div
+        onClick={() => handleClick("codeforces")}
+        className="cursor-pointer p-6 w-56 h-40 rounded-2xl bg-blue-50 border border-blue-200 shadow-md flex flex-col items-center justify-center hover:scale-105 hover:shadow-lg hover:border-blue-300 transition-all duration-200"
+      >
+        <span className="text-xl font-bold text-blue-600">CodeForces</span>
+        <p className="text-sm text-blue-400 mt-2">Compete & Excel</p>
       </div>
     </div>
   );

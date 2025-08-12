@@ -28,7 +28,7 @@ export default function HomePage() {
       {/* Header with user info and logout */}
       <div className="w-full max-w-6xl mb-10 flex justify-between items-center">
         <h1 className="text-3xl sm:text-4xl font-extrabold text-orange-400 flex items-center gap-2 drop-shadow">
-          🏆 LeetCode Tracker
+          🏆 Competitive Programming Tracker
         </h1>
         <div className="flex items-center gap-4 text-sm">
           <Link href="/analytics">
