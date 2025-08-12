@@ -1,0 +1,941 @@
+openapi: 3.0.3
+info:
+  title: Competitive Programming Leaderboard API
+  description: |
+    A comprehensive API for managing and retrieving competitive programming leaderboard data for different platforms.
+    This API provides endpoints for student data, CodeChef profiles, LeetCode profiles, leaderboards, and analytics.
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@competitive-leaderboard.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.competitive-leaderboard.com/v1
+    description: Production server
+  - url: https://staging-api.competitive-leaderboard.com/v1
+    description: Staging server
+  - url: http://localhost:4000/v1
+    description: Local development server
+
+tags:
+  - name: Students
+    description: Student management and retrieval operations
+  - name: Leaderboards
+    description: Leaderboard data and rankings
+  - name: CodeChef
+    description: CodeChef-specific data and profiles
+  - name: LeetCode
+    description: LeetCode-specific data and profiles
+  - name: Analytics
+    description: Analytics and reporting endpoints
+  - name: Contests
+    description: Contest management and results
+  - name: Authentication
+    description: Authentication and authorization
+
+paths:
+  /students:
+    get:
+      tags:
+        - Students
+      summary: Get paginated students
+      description: Retrieve a paginated list of students with optional filtering by batch and section
+      parameters:
+        - name: batch
+          in: query
+          required: true
+          description: Batch identifier (e.g., batch24-28)
+          schema:
+            type: string
+            example: "batch24-28"
+        - name: section
+          in: query
+          required: false
+          description: Section filter (e.g., CSE-O, CSE-C, All)
+          schema:
+            type: string
+            example: "CSE-O"
+        - name: limit
+          in: query
+          required: false
+          description: Number of students to return per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: cursor
+          in: query
+          required: false
+          description: Cursor for pagination
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedStudentsResponse'
+              examples:
+                success:
+                  summary: Successful response
+                  value:
+                    paginatedStudents:
+                      students:
+                        - id: "1"
+                          name: "NATASHA PATNAIK"
+                          rollNumber: "24CS0583"
+                          section: "CSE-O"
+                          codechefData:
+                            countryFlag: "🇮🇳"
+                            countryName: "India"
+                            countryRank: 51348
+                            currentRating: 1328
+                            globalRank: 55531
+                            highestRating: 1328
+                            name: "natasha_patnaik"
+                            profile: "https://codechef.com/users/natasha_patnaik"
+                            stars: "1★"
+                          leetcodeData:
+                            username: "natasha_patnaik"
+                            totalSolved: 775
+                            easySolved: 471
+                            mediumSolved: 271
+                            hardSolved: 33
+                            rating: 1801.43
+                            globalRanking: 53706
+                            topPercentage: 7.53
+                            attendedContestsCount: 15
+                      nextCursor: "eyJpZCI6IjIxIn0="
+        '400':
+          description: Bad request - invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /students/{studentId}:
+    get:
+      tags:
+        - Students
+      summary: Get student by ID
+      description: Retrieve detailed information about a specific student
+      parameters:
+        - name: studentId
+          in: path
+          required: true
+          description: Unique identifier of the student
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Student'
+        '404':
+          description: Student not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /leaderboards/{batch}/{section}/{platform}:
+    get:
+      tags:
+        - Leaderboards
+      summary: Get platform-specific leaderboard
+      description: Retrieve leaderboard data for a specific platform (leetcode, codechef) within a batch and section
+      parameters:
+        - name: batch
+          in: path
+          required: true
+          description: Batch identifier
+          schema:
+            type: string
+            example: "batch24-28"
+        - name: section
+          in: path
+          required: true
+          description: Section identifier
+          schema:
+            type: string
+            example: "CSE-O"
+        - name: platform
+          in: path
+          required: true
+          description: Platform identifier
+          schema:
+            type: string
+            enum: [leetcode, codechef]
+            example: "leetcode"
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaderboardResponse'
+        '404':
+          description: Leaderboard not found
+
+  /codechef/profiles:
+    get:
+      tags:
+        - CodeChef
+      summary: Get CodeChef profiles
+      description: Retrieve CodeChef profile data for students
+      parameters:
+        - name: batch
+          in: query
+          required: true
+          description: Batch filter
+          schema:
+            type: string
+        - name: section
+          in: query
+          required: false
+          description: Section filter
+          schema:
+            type: string
+        - name: rating_min
+          in: query
+          required: false
+          description: Minimum rating filter
+          schema:
+            type: integer
+        - name: rating_max
+          in: query
+          required: false
+          description: Maximum rating filter
+          schema:
+            type: integer
+        - name: stars
+          in: query
+          required: false
+          description: Filter by stars
+          schema:
+            type: string
+            example: "1★"
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CodeChefProfile'
+
+  /leetcode/profiles:
+    get:
+      tags:
+        - LeetCode
+      summary: Get LeetCode profiles
+      description: Retrieve LeetCode profile data for students
+      parameters:
+        - name: batch
+          in: query
+          required: true
+          description: Batch filter
+          schema:
+            type: string
+        - name: section
+          in: query
+          required: false
+          description: Section filter
+          schema:
+            type: string
+        - name: rating_min
+          in: query
+          required: false
+          description: Minimum rating filter
+          schema:
+            type: number
+        - name: rating_max
+          in: query
+          required: false
+          description: Maximum rating filter
+          schema:
+            type: number
+        - name: total_solved_min
+          in: query
+          required: false
+          description: Minimum total problems solved
+          schema:
+            type: integer
+        - name: difficulty
+          in: query
+          required: false
+          description: Filter by difficulty level
+          schema:
+            type: string
+            enum: [easy, medium, hard]
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LeetCodeProfile'
+
+  /leetcode/contests/{contestId}/results:
+    get:
+      tags:
+        - LeetCode
+      summary: Get contest results
+      description: Retrieve results for a specific LeetCode contest
+      parameters:
+        - name: contestId
+          in: path
+          required: true
+          description: Contest identifier
+          schema:
+            type: string
+            example: "weekly-contest-462"
+        - name: batch
+          in: query
+          required: true
+          description: Batch filter
+          schema:
+            type: string
+        - name: section
+          in: query
+          required: false
+          description: Section filter
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContestResultsResponse'
+
+  /leetcode/contests/{contestId}/leaderboard:
+    get:
+      tags:
+        - LeetCode
+      summary: Get contest leaderboard
+      description: Retrieve leaderboard for a specific LeetCode contest
+      parameters:
+        - name: contestId
+          in: path
+          required: true
+          description: Contest identifier
+          schema:
+            type: string
+            example: "weekly-contest-462"
+        - name: batch
+          in: query
+          required: true
+          description: Batch filter
+          schema:
+            type: string
+        - name: section
+          in: query
+          required: false
+          description: Section filter
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          description: Number of results to return
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContestLeaderboardResponse'
+
+  /analytics/{batch}/overview:
+    get:
+      tags:
+        - Analytics
+      summary: Get batch analytics overview
+      description: Retrieve analytics overview for a specific batch
+      parameters:
+        - name: batch
+          in: path
+          required: true
+          description: Batch identifier
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchAnalytics'
+
+  /analytics/{batch}/platform/{platform}:
+    get:
+      tags:
+        - Analytics
+      summary: Get platform-specific analytics
+      description: Retrieve analytics for a specific platform within a batch
+      parameters:
+        - name: batch
+          in: path
+          required: true
+          description: Batch identifier
+          schema:
+            type: string
+        - name: platform
+          in: path
+          required: true
+          description: Platform identifier
+          schema:
+            type: string
+            enum: [leetcode, codechef]
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformAnalytics'
+
+  /contests:
+    get:
+      tags:
+        - Contests
+      summary: Get all contests
+      description: Retrieve list of all contests for a batch
+      parameters:
+        - name: batch
+          in: query
+          required: true
+          description: Batch identifier
+          schema:
+            type: string
+        - name: platform
+          in: query
+          required: false
+          description: Platform filter
+          schema:
+            type: string
+            enum: [leetcode, codechef]
+        - name: status
+          in: query
+          required: false
+          description: Contest status filter
+          schema:
+            type: string
+            enum: [upcoming, ongoing, completed]
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Contest'
+
+  /contests/{contestId}:
+    get:
+      tags:
+        - Contests
+      summary: Get contest details
+      description: Retrieve detailed information about a specific contest
+      parameters:
+        - name: contestId
+          in: path
+          required: true
+          description: Contest identifier
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contest'
+
+components:
+  schemas:
+    Student:
+      type: object
+      required:
+        - id
+        - name
+        - rollNumber
+        - section
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the student
+          example: "1"
+        name:
+          type: string
+          description: Full name of the student
+          example: "NATASHA PATNAIK"
+        rollNumber:
+          type: string
+          description: Student's roll number
+          example: "24CS0583"
+        section:
+          type: string
+          description: Academic section
+          example: "CSE-O"
+        codechefData:
+          $ref: '#/components/schemas/CodeChefData'
+        leetcodeData:
+          $ref: '#/components/schemas/LeetCodeData'
+
+    CodeChefData:
+      type: object
+      properties:
+        countryFlag:
+          type: string
+          description: Country flag emoji
+          example: "🇮🇳"
+        countryName:
+          type: string
+          description: Name of the country
+          example: "India"
+        countryRank:
+          type: integer
+          description: Country ranking in CodeChef
+          example: 51348
+        currentRating:
+          type: integer
+          description: Current rating in CodeChef
+          example: 1328
+        globalRank:
+          type: integer
+          description: Global ranking in CodeChef
+          example: 55531
+        highestRating:
+          type: integer
+          description: Highest rating achieved
+          example: 1328
+        name:
+          type: string
+          description: CodeChef username
+          example: "natasha_patnaik"
+        profile:
+          type: string
+          description: URL to CodeChef profile
+          example: "https://codechef.com/users/natasha_patnaik"
+        stars:
+          type: string
+          description: CodeChef stars
+          example: "1★"
+
+    LeetCodeData:
+      type: object
+      properties:
+        username:
+          type: string
+          description: LeetCode username
+          example: "natasha_patnaik"
+        totalSolved:
+          type: integer
+          description: Total number of problems solved
+          example: 775
+        easySolved:
+          type: integer
+          description: Number of easy problems solved
+          example: 471
+        mediumSolved:
+          type: integer
+          description: Number of medium problems solved
+          example: 271
+        hardSolved:
+          type: integer
+          description: Number of hard problems solved
+          example: 33
+        rating:
+          type: number
+          description: Current LeetCode rating
+          example: 1801.43
+        globalRanking:
+          type: integer
+          description: Global ranking in LeetCode
+          example: 53706
+        topPercentage:
+          type: number
+          description: Top percentage achieved
+          example: 7.53
+        attendedContestsCount:
+          type: integer
+          description: Number of contests attended
+          example: 15
+        latestContests:
+          type: array
+          description: Recent contest performance
+          items:
+            $ref: '#/components/schemas/ContestPerformance'
+
+    ContestPerformance:
+      type: object
+      properties:
+        title:
+          type: string
+          description: Contest title
+          example: "weekly-contest-462"
+        data:
+          $ref: '#/components/schemas/ContestData'
+
+    ContestData:
+      type: object
+      properties:
+        score:
+          type: integer
+          description: Contest score
+          example: 18
+        attempted:
+          type: boolean
+          description: Whether contest was attempted
+          example: true
+        copied:
+          type: boolean
+          description: Whether code was copied
+          example: false
+        rank:
+          type: integer
+          description: Contest rank
+          example: 1250
+        solvedCount:
+          type: integer
+          description: Number of problems solved
+          example: 3
+        easySolved:
+          type: integer
+          description: Easy problems solved
+          example: 1
+        mediumSolved:
+          type: integer
+          description: Medium problems solved
+          example: 2
+        hardSolved:
+          type: integer
+          description: Hard problems solved
+          example: 0
+        available:
+          type: boolean
+          description: Whether contest was available
+          example: true
+        new_rating:
+          type: number
+          description: New rating after contest
+          example: 1801.43
+        old_rating:
+          type: number
+          description: Rating before contest
+          example: 1785.67
+        savedAt:
+          type: string
+          format: date-time
+          description: When data was saved
+
+    CodeChefProfile:
+      type: object
+      properties:
+        studentId:
+          type: string
+          description: Reference to student
+        codechefData:
+          $ref: '#/components/schemas/CodeChefData'
+
+    LeetCodeProfile:
+      type: object
+      properties:
+        studentId:
+          type: string
+          description: Reference to student
+        leetcodeData:
+          $ref: '#/components/schemas/LeetCodeData'
+
+    Contest:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Contest identifier
+          example: "weekly-contest-462"
+        title:
+          type: string
+          description: Contest title
+          example: "Weekly Contest 462"
+        platform:
+          type: string
+          description: Platform name
+          enum: [leetcode, codechef]
+        startTime:
+          type: string
+          format: date-time
+          description: Contest start time
+        endTime:
+          type: string
+          format: date-time
+          description: Contest end time
+        status:
+          type: string
+          description: Contest status
+          enum: [upcoming, ongoing, completed]
+        participants:
+          type: integer
+          description: Number of participants
+        problems:
+          type: array
+          description: Contest problems
+          items:
+            type: object
+            properties:
+              title:
+                type: string
+                description: Problem title
+              difficulty:
+                type: string
+                description: Problem difficulty
+                enum: [easy, medium, hard]
+              points:
+                type: integer
+                description: Problem points
+
+    ContestResultsResponse:
+      type: object
+      properties:
+        contestId:
+          type: string
+          description: Contest identifier
+        batch:
+          type: string
+          description: Batch identifier
+        section:
+          type: string
+          description: Section identifier
+        results:
+          type: array
+          description: Contest results
+          items:
+            $ref: '#/components/schemas/ContestResult'
+
+    ContestResult:
+      type: object
+      properties:
+        studentId:
+          type: string
+          description: Student identifier
+        name:
+          type: string
+          description: Student name
+        rollNumber:
+          type: string
+          description: Student roll number
+        score:
+          type: integer
+          description: Contest score
+        rank:
+          type: integer
+          description: Contest rank
+        solvedCount:
+          type: integer
+          description: Problems solved
+        oldRating:
+          type: number
+          description: Rating before contest
+        newRating:
+          type: number
+          description: Rating after contest
+        copied:
+          type: boolean
+          description: Whether code was copied
+
+    ContestLeaderboardResponse:
+      type: object
+      properties:
+        contestId:
+          type: string
+          description: Contest identifier
+        batch:
+          type: string
+          description: Batch identifier
+        section:
+          type: string
+          description: Section identifier
+        leaderboard:
+          type: array
+          description: Contest leaderboard
+          items:
+            $ref: '#/components/schemas/ContestResult'
+        totalParticipants:
+          type: integer
+          description: Total number of participants
+
+    PaginatedStudentsResponse:
+      type: object
+      properties:
+        paginatedStudents:
+          type: object
+          properties:
+            students:
+              type: array
+              items:
+                $ref: '#/components/schemas/Student'
+            nextCursor:
+              type: string
+              description: Cursor for next page
+              nullable: true
+
+    LeaderboardResponse:
+      type: object
+      properties:
+        batch:
+          type: string
+          description: Batch identifier
+        section:
+          type: string
+          description: Section identifier
+        platform:
+          type: string
+          description: Platform identifier
+        students:
+          type: array
+          items:
+            $ref: '#/components/schemas/Student'
+        totalCount:
+          type: integer
+          description: Total number of students
+        lastUpdated:
+          type: string
+          format: date-time
+          description: Last update timestamp
+
+    BatchAnalytics:
+      type: object
+      properties:
+        batch:
+          type: string
+          description: Batch identifier
+        totalStudents:
+          type: integer
+          description: Total number of students
+        sections:
+          type: object
+          description: Breakdown by sections
+          additionalProperties:
+            type: integer
+        platforms:
+          type: object
+          description: Platform breakdown
+          properties:
+            leetcode:
+              type: object
+              properties:
+                totalStudents:
+                  type: integer
+                averageRating:
+                  type: number
+                averageProblemsSolved:
+                  type: number
+            codechef:
+              type: object
+              properties:
+                totalStudents:
+                  type: integer
+                averageRating:
+                  type: number
+                averageStars:
+                  type: number
+        topPerformers:
+          type: object
+          description: Top performers by platform
+          properties:
+            leetcode:
+              type: array
+              items:
+                $ref: '#/components/schemas/Student'
+              maxItems: 10
+            codechef:
+              type: array
+              items:
+                $ref: '#/components/schemas/Student'
+              maxItems: 10
+
+    PlatformAnalytics:
+      type: object
+      properties:
+        platform:
+          type: string
+          description: Platform name
+        batch:
+          type: string
+          description: Batch identifier
+        totalStudents:
+          type: integer
+          description: Total students on platform
+        averageRating:
+          type: number
+          description: Average rating
+        ratingDistribution:
+          type: object
+          description: Rating distribution
+          additionalProperties:
+            type: integer
+        topPerformers:
+          type: array
+          description: Top performers
+          items:
+            $ref: '#/components/schemas/Student'
+          maxItems: 20
+        recentActivity:
+          type: array
+          description: Recent contest activity
+          items:
+            $ref: '#/components/schemas/Contest'
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+        code:
+          type: string
+          description: Error code
+        details:
+          type: object
+          description: Additional error details
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+security:
+  - BearerAuth: []
+  - ApiKeyAuth: []
+
+externalDocs:
+  description: Find more info about the API
+  url: https://docs.competitive-leaderboard.com
