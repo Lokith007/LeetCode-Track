@@ -1,57 +1,99 @@
 'use client';
 
 import { gql, useQuery } from '@apollo/client';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
-const GET_PAGINATED_STUDENTS = gql`
-  query PaginatedStudents($batch: String!, $section: String, $limit: Int, $cursor: String) {
-    paginatedStudents(batch: $batch, section: $section, limit: $limit, cursor: $cursor) {
-      students {
-        id
-        name
-        rollNumber
-        section
-        codeforcesData {
-          handle
-          rating
-          maxRating
-          rank
-          maxRank
-          contribution
-          friendOfCount
-          titlePhoto
-          avatar
-          registrationTime
-          lastOnlineTime
-          organization
-          country
-          city
-          solvedProblems
-          participatedContests
+const GET_STUDENTS = gql`
+  query GetStudents($batch: String!) {
+    students(batch: $batch) {
+      id
+      name
+      rollNumber
+      section
+      codeforcesUsername
+      codeforces {
+        avatar
+        contribution
+        currentRating
+        friendOfCount
+        handle
+        maxRating
+        problemStats {
+          difficultyBreakdown {
+            easySolved
+            hardSolved
+            legendarySolved
+            mediumSolved
+            totalSolved
+            veryHardSolved
+          }
         }
+        rank
+        ratingChange
+        recentContests {
+          attended
+          contestId
+          contestName
+          duration
+          startTime
+          userPerformance {
+            division
+            newRating
+            oldRating
+            rank
+            ratingChange
+            wasEligible
+          }
+        }
+        titlePhoto
       }
-      nextCursor
     }
   }
 `;
 
+interface DifficultyBreakdown {
+  easySolved: number;
+  hardSolved: number;
+  legendarySolved: number;
+  mediumSolved: number;
+  totalSolved: number;
+  veryHardSolved: number;
+}
+
+interface ProblemStats {
+  difficultyBreakdown: DifficultyBreakdown;
+}
+
+interface UserPerformance {
+  division: number;
+  newRating: number;
+  oldRating: number;
+  rank: number;
+  ratingChange: number;
+  wasEligible: boolean;
+}
+
+interface RecentContest {
+  attended: boolean;
+  contestId: number;
+  contestName: string;
+  duration: number;
+  startTime: number;
+  userPerformance: UserPerformance;
+}
+
 interface CodeforcesData {
-  handle: string;
-  rating: number;
-  maxRating: number;
-  rank: string;
-  maxRank: string;
-  contribution: number;
-  friendOfCount: number;
-  titlePhoto: string;
   avatar: string;
-  registrationTime: string;
-  lastOnlineTime: string;
-  organization: string;
-  country: string;
-  city: string;
-  solvedProblems: number;
-  participatedContests: number;
+  contribution: number;
+  currentRating: number;
+  friendOfCount: number;
+  handle: string;
+  maxRating: number;
+  problemStats: ProblemStats;
+  rank: string;
+  ratingChange: number;
+  recentContests: RecentContest[];
+  titlePhoto: string;
 }
 
 interface Student {
@@ -59,7 +101,8 @@ interface Student {
   name: string;
   rollNumber: string;
   section: string;
-  codeforcesData?: CodeforcesData | null;
+  codeforcesUsername: string;
+  codeforces?: CodeforcesData | null;
 }
 
 type LeaderboardProps = {
@@ -69,59 +112,76 @@ type LeaderboardProps = {
 
 export default function Leaderboard({ batch, section }: LeaderboardProps) {
   const [students, setStudents] = useState<Student[]>([]);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [fetchLoading, setFetchLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'performance' | 'analytics'>('overview');
+  const [activeTab, setActiveTab] = useState<'profile' | 'contest'>('profile');
   const [filter, setFilter] = useState<'All' | 'SDE' | 'Non-SDE'>('All');
   const [searchQuery, setSearchQuery] = useState('');
-  const [page, setPage] = useState(0);
-  const [cursorHistory, setCursorHistory] = useState<string[]>(['']);
+  const [selectedContest, setSelectedContest] = useState<string>('');
+  const [attendanceFilter, setAttendanceFilter] = useState<'attended' | 'not-attended'>('attended');
 
   const SDE_SECTIONS = ['CSE-O', 'CSE-C', 'CSE-AI', 'CSE-AIML', 'CSE-CY', 'CSE-DS'];
 
-  const { loading, fetchMore } = useQuery(GET_PAGINATED_STUDENTS, {
-    variables: { batch, section: section === 'All' ? null : section, limit: 20, cursor: null },
+  const { loading } = useQuery(GET_STUDENTS, {
+    variables: { batch },
     onCompleted: (data) => {
-      setStudents(data.paginatedStudents.students);
-      setNextCursor(data.paginatedStudents.nextCursor);
-      setCursorHistory(['', data.paginatedStudents.nextCursor].filter(Boolean));
+      setStudents(data.students);
     },
   });
 
-  const handlePageChange = async (pageIndex: number) => {
-    if (pageIndex === page) return;
-    
-    if (pageIndex < page) {
-      setPage(pageIndex);
-      return;
-    }
+  const sectionFiltered = useMemo(() => {
+    return students.filter((s) => {
+      const sec = s.section?.toUpperCase() ?? '';
+      return !section || section.toLowerCase() === 'all' || sec === section.toUpperCase();
+    });
+  }, [students, section]);
 
-    if (!nextCursor) return;
+  // Sort by current rating descending for profile tab
+  const sortedStudents = useMemo(() => {
+    return [...sectionFiltered].sort((a, b) => {
+      const ra = a.codeforces?.currentRating ?? -Infinity;
+      const rb = b.codeforces?.currentRating ?? -Infinity;
+      return rb - ra;
+    });
+  }, [sectionFiltered]);
 
-    setFetchLoading(true);
-    try {
-      const { data } = await fetchMore({
-        variables: {
-          batch,
-          section: section === 'All' ? null : section,
-          limit: 20,
-          cursor: nextCursor,
-        },
+  const allContestOptions = useMemo(() => {
+    const map = new Map<string, number>();
+    sectionFiltered.forEach((s) => {
+      s.codeforces?.recentContests?.forEach((rc) => {
+        if (rc.attended) {
+          const t = rc.startTime;
+          const prev = map.get(rc.contestName);
+          if (!prev || t > prev) map.set(rc.contestName, t);
+        }
       });
+    });
+    return Array.from(map.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([name]) => name)
+      .slice(0, 5); // Limit to 5 contests
+  }, [sectionFiltered]);
 
-      const newStudents = data.paginatedStudents.students;
-      const newNextCursor = data.paginatedStudents.nextCursor;
+  const contestRows = useMemo(() => {
+    if (!selectedContest) return [] as Array<{ student: Student; entry?: RecentContest }>;
 
-      setStudents((prev) => [...prev, ...newStudents]);
-      setNextCursor(newNextCursor);
-      setPage(pageIndex);
-      setCursorHistory((prev) => [...prev, newNextCursor].filter(Boolean));
-    } catch (error) {
-      console.error('Error fetching more data:', error);
-    } finally {
-      setFetchLoading(false);
+    const attended: Array<{ student: Student; entry: RecentContest }> = [];
+    const notAttended: Array<{ student: Student; entry?: RecentContest }> = [];
+
+    sectionFiltered.forEach((student) => {
+      const entry = student.codeforces?.recentContests?.find((rc) => rc.contestName === selectedContest);
+      if (entry && entry.attended) attended.push({ student, entry });
+      else notAttended.push({ student });
+    });
+
+    if (attendanceFilter === 'attended') {
+      attended.sort((a, b) => (b.entry.userPerformance.newRating ?? -Infinity) - (a.entry.userPerformance.newRating ?? -Infinity));
+      return attended;
     }
-  };
+    // not-attended view: sort by current rating desc
+    notAttended.sort(
+      (a, b) => (b.student.codeforces?.currentRating ?? -Infinity) - (a.student.codeforces?.currentRating ?? -Infinity)
+    );
+    return notAttended;
+  }, [sectionFiltered, selectedContest, attendanceFilter]);
 
   if (loading && students.length === 0) {
     return (
@@ -136,7 +196,8 @@ export default function Leaderboard({ batch, section }: LeaderboardProps) {
   const filteredStudents = students.filter((student: Student) => {
     const matchesSearch =
       student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      student.rollNumber.toLowerCase().includes(searchQuery.toLowerCase());
+      student.rollNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      student.codeforcesUsername.toLowerCase().includes(searchQuery.toLowerCase());
 
     const studentSection = student.section?.toUpperCase() ?? '';
     const isSDE = SDE_SECTIONS.includes(studentSection);
@@ -149,6 +210,12 @@ export default function Leaderboard({ batch, section }: LeaderboardProps) {
     if (filter === 'Non-SDE' && isSDE) return false;
 
     return matchesSearch;
+  });
+
+  const sortedFilteredStudents = [...filteredStudents].sort((a, b) => {
+    const ra = a.codeforces?.currentRating ?? -Infinity;
+    const rb = b.codeforces?.currentRating ?? -Infinity;
+    return rb - ra;
   });
 
   const getRatingColor = (rating: number) => {
@@ -175,31 +242,20 @@ export default function Leaderboard({ batch, section }: LeaderboardProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white px-6 py-10">
-      <div className="w-full max-w-7xl mx-auto space-y-8">
-        {/* Header Section */}
-        <div className="text-center space-y-4">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-            CodeForces Performance Hub
-          </h1>
-          <p className="text-slate-300 text-lg">
-            Track your competitive programming excellence
-          </p>
-        </div>
-
-        {/* Navigation Tabs */}
+      <div className="w-full max-w-7xl mx-auto space-y-6">
+        {/* Nav bar */}
         <div className="flex justify-center gap-2 bg-slate-800/50 p-2 rounded-2xl backdrop-blur-sm">
           {[
-            { key: 'overview', label: 'Overview', icon: '🏆' },
-            { key: 'performance', label: 'Performance', icon: '📊' },
-            { key: 'analytics', label: 'Analytics', icon: '📈' }
+            { key: 'profile', label: 'Profile', icon: '👤' },
+            { key: 'contest', label: 'Contest', icon: '🏁' },
           ].map((tab) => (
             <button
               key={tab.key}
-              onClick={() => setActiveTab(tab.key as any)}
+              onClick={() => setActiveTab(tab.key as 'profile' | 'contest')}
               className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300 ${
                 activeTab === tab.key
-                  ? "bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/25"
-                  : "text-slate-300 hover:text-white hover:bg-slate-700/50"
+                  ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/25'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
               }`}
             >
               <span>{tab.icon}</span>
@@ -208,7 +264,8 @@ export default function Leaderboard({ batch, section }: LeaderboardProps) {
           ))}
         </div>
 
-        {activeTab === "overview" && (
+        {/* Profile Tab */}
+        {activeTab === 'profile' && (
           <div className="space-y-6">
             {/* Controls Section */}
             <div className="flex flex-col sm:flex-row justify-between gap-4">
@@ -248,165 +305,140 @@ export default function Leaderboard({ batch, section }: LeaderboardProps) {
 
             {/* Leaderboard Grid */}
             <div className="grid gap-4">
-              {filteredStudents.map((student: Student, index: number) => {
-                const cf = student.codeforcesData;
+              {sortedFilteredStudents.map((student: Student, index: number) => {
+                const cf = student.codeforces;
                 return (
                   <div
                     key={student.id}
                     className="group bg-slate-800/30 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50 hover:border-blue-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/10"
                   >
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-                      {/* Rank & Avatar */}
-                      <div className="lg:col-span-2 flex items-center gap-4">
+                      {/* Rank & Name */}
+                      <div className="lg:col-span-4 flex items-center gap-4">
                         <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold text-lg">
-                          {page * 20 + (index + 1)}
+                          {index + 1}
                         </div>
-                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-slate-600 to-slate-700 flex items-center justify-center text-white font-bold text-xl border-2 border-slate-500">
-                          {student.name[0]}
+                        <div>
+                          <div className="text-white text-lg font-semibold flex items-center gap-2">
+                            {student.name}
+                            <span className="text-blue-300 text-base">⭐</span>
+                          </div>
+                          <div className="text-slate-300/70 text-sm">@{student.rollNumber} • {student.section}</div>
                         </div>
-                      </div>
-
-                      {/* User Info */}
-                      <div className="lg:col-span-3 space-y-2">
-                        <h3 className="text-lg font-semibold text-white group-hover:text-blue-300 transition-colors">
-                          {student.name}
-                        </h3>
-                        <p className="text-slate-400 text-sm">
-                          @{student.rollNumber}
-                        </p>
-                        <span className="inline-block px-3 py-1 bg-slate-700/50 rounded-full text-xs text-slate-300">
-                          {student.section}
-                        </span>
-                      </div>
-
-                      {/* CodeForces Handle */}
-                      <div className="lg:col-span-2 text-center space-y-2">
-                        <div className="text-lg font-bold text-blue-400">
-                          {cf?.handle || "—"}
-                        </div>
-                        <p className="text-xs text-slate-400 uppercase tracking-wide">
-                          Handle
-                        </p>
                       </div>
 
                       {/* Current Rating */}
-                      <div className="lg:col-span-2 text-center space-y-2">
-                        <div className={`text-2xl font-bold ${cf?.rating ? getRatingColor(cf.rating) : 'text-slate-400'}`}>
-                          {cf?.rating?.toLocaleString() || "—"}
+                      <div className="lg:col-span-3 text-center space-y-1">
+                        <div className={`text-blue-400 text-2xl font-extrabold ${cf?.currentRating ? getRatingColor(cf.currentRating) : ''}`}>
+                          {cf?.currentRating?.toLocaleString() ?? '—'}
                         </div>
-                        <p className="text-xs text-slate-400 uppercase tracking-wide">
-                          Rating
-                        </p>
+                        <div className="text-xs text-slate-400 uppercase tracking-wide">Contest Rating</div>
                       </div>
 
-                      {/* Max Rating */}
-                      <div className="lg:col-span-2 text-center space-y-2">
-                        <div className={`text-xl font-semibold ${cf?.maxRating ? getRatingColor(cf.maxRating) : 'text-slate-400'}`}>
-                          {cf?.maxRating?.toLocaleString() || "—"}
+                      {/* Highest Rating */}
+                      <div className="lg:col-span-2 text-center space-y-1">
+                        <div className={`text-cyan-300 text-xl font-semibold ${cf?.maxRating ? getRatingColor(cf.maxRating) : ''}`}>
+                          {cf?.maxRating?.toLocaleString() ?? '—'}
                         </div>
-                        <p className="text-xs text-slate-400 uppercase tracking-wide">
-                          Max Rating
-                        </p>
+                        <div className="text-xs text-slate-400 uppercase tracking-wide">Highest</div>
                       </div>
 
                       {/* Rank */}
-                      <div className="lg:col-span-1 text-center space-y-2">
-                        <div className={`text-sm font-medium ${cf?.rank ? getRankColor(cf.rank) : 'text-slate-400'}`}>
-                          {cf?.rank || "—"}
+                      <div className="lg:col-span-2 text-center space-y-1">
+                        <div className={`text-blue-300 text-xl font-semibold ${cf?.rank ? getRankColor(cf.rank) : 'text-slate-400'}`}>
+                          {cf?.rank || '—'}
                         </div>
-                        <p className="text-xs text-slate-400 uppercase tracking-wide">
-                          Rank
-                        </p>
+                        <div className="text-xs text-slate-400 uppercase tracking-wide">Rank</div>
+                      </div>
+                      <div className="lg:col-span-1 text-center space-y-1">
+                        <div className="text-cyan-400 text-lg font-medium">
+                          {cf?.problemStats?.difficultyBreakdown?.totalSolved ?? '—'}
+                        </div>
+                        <div className="text-xs text-slate-400 uppercase tracking-wide">Solved</div>
                       </div>
                     </div>
-
-                    {/* Additional Info Row */}
-                    {cf && (
-                      <div className="mt-4 pt-4 border-t border-slate-700/50 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                        <div>
-                          <div className="text-lg font-semibold text-cyan-400">
-                            {cf.solvedProblems || 0}
-                          </div>
-                          <p className="text-xs text-slate-400">Problems Solved</p>
-                        </div>
-                        <div>
-                          <div className="text-lg font-semibold text-green-400">
-                            {cf.participatedContests || 0}
-                          </div>
-                          <p className="text-xs text-slate-400">Contests</p>
-                        </div>
-                        <div>
-                          <div className="text-lg font-semibold text-yellow-400">
-                            {cf.contribution || 0}
-                          </div>
-                          <p className="text-xs text-slate-400">Contribution</p>
-                        </div>
-                        <div>
-                          <div className="text-lg font-semibold text-purple-400">
-                            {cf.friendOfCount || 0}
-                          </div>
-                          <p className="text-xs text-slate-400">Friends</p>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 );
               })}
             </div>
+          </div>
+        )}
 
-            {/* Pagination */}
-            {students.length > 0 && (
-              <div className="flex justify-center gap-2 pt-6">
-                {cursorHistory.map((_, index) => (
+        {/* Contest Tab */}
+        {activeTab === 'contest' && (
+          <div className="space-y-4">
+            {/* Controls */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <select
+                  value={selectedContest}
+                  onChange={(e) => setSelectedContest(e.target.value)}
+                  className="px-4 py-2 rounded-xl bg-slate-800/70 border border-slate-600 text-slate-200 focus:outline-none focus:border-blue-400"
+                >
+                  <option value="">Select Contest</option>
+                  {allContestOptions.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex gap-2 self-end sm:self-auto">
+                {(['attended', 'not-attended'] as const).map((key) => (
                   <button
-                    key={index}
-                    onClick={() => !fetchLoading && handlePageChange(index)}
-                    disabled={fetchLoading}
-                    className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                      page === index
-                        ? "bg-blue-500 text-white shadow-lg shadow-blue-500/25"
-                        : "bg-slate-700/50 text-slate-300 hover:bg-slate-600/50 hover:text-white"
-                    } ${fetchLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+                    key={key}
+                    onClick={() => setAttendanceFilter(key)}
+                    className={`px-5 py-2 rounded-xl font-medium text-sm transition-all ${
+                      attendanceFilter === key
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-slate-800/70 text-slate-200 hover:bg-slate-700/70'
+                    }`}
                   >
-                    {fetchLoading && page === index ? (
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    ) : (
-                      index + 1
-                    )}
+                    {key === 'attended' ? 'Attended' : 'Not Attended'}
                   </button>
                 ))}
-
-                {nextCursor && (
-                  <button
-                    onClick={() => !fetchLoading && handlePageChange(page + 1)}
-                    disabled={fetchLoading}
-                    className="px-4 py-2 rounded-lg font-medium bg-slate-700/50 text-slate-300 hover:bg-slate-600/50 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {fetchLoading ? (
-                      <div className="w-4 h-4 border-2 border-slate-300 border-t-transparent rounded-full animate-spin"></div>
-                    ) : (
-                      "Next →"
-                    )}
-                  </button>
-                )}
               </div>
-            )}
-          </div>
-        )}
+            </div>
 
-        {activeTab === "performance" && (
-          <div className="text-center py-20">
-            <div className="text-6xl mb-4">🏆</div>
-            <h3 className="text-2xl font-semibold text-white mb-2">Performance Analytics</h3>
-            <p className="text-slate-400">Detailed performance metrics coming soon...</p>
-          </div>
-        )}
-
-        {activeTab === "analytics" && (
-          <div className="text-center py-20">
-            <div className="text-6xl mb-4">📈</div>
-            <h3 className="text-2xl font-semibold text-white mb-2">Advanced Analytics</h3>
-            <p className="text-slate-400">Deep insights and trends coming soon...</p>
+            {/* Rows */}
+            <div className="grid gap-3">
+              {contestRows.map((row, index) => (
+                <div
+                  key={row.student.id}
+                  className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center px-6 py-4 bg-slate-800/30 rounded-xl shadow-md border border-slate-700/50"
+                >
+                  <div className="lg:col-span-4 flex items-center gap-4 min-w-0">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 text-white font-bold flex items-center justify-center text-sm">
+                      {index + 1}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-white font-semibold text-base truncate flex items-center gap-2">
+                        {row.student.name}
+                        <span className="text-blue-300 text-sm">⭐</span>
+                      </div>
+                      <div className="text-sm text-slate-300/70 truncate">@{row.student.rollNumber} • {row.student.section}</div>
+                    </div>
+                  </div>
+                  <div className="lg:col-span-2 text-center">
+                    <div className="text-blue-400 font-extrabold text-lg">{row.entry?.userPerformance?.newRating ?? '—'}</div>
+                    <div className="text-xs text-slate-400">Rating</div>
+                  </div>
+                  <div className="lg:col-span-2 text-center">
+                    <div className="text-cyan-300 font-medium">{row.entry?.userPerformance?.rank ? `#${row.entry.userPerformance.rank}` : '—'}</div>
+                    <div className="text-xs text-slate-400">Rank</div>
+                  </div>
+                  <div className="lg:col-span-2 text-center">
+                    <div className="text-blue-300 font-medium">{row.student.codeforces?.currentRating ?? '—'}</div>
+                    <div className="text-xs text-slate-400">Current</div>
+                  </div>
+                  <div className="lg:col-span-2 text-center">
+                    <div className="text-cyan-300 font-medium">{row.student.codeforces?.maxRating ?? '—'}</div>
+                    <div className="text-xs text-slate-400">Highest</div>
+                  </div>
+                </div>
+              ))}
+              {contestRows.length === 0 && (
+                <div className="text-center text-slate-400 py-10">No data for the selected contest.</div>
+              )}
+            </div>
           </div>
         )}
       </div>
