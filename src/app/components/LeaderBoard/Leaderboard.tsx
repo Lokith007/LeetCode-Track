@@ -230,7 +230,7 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
             ? contest.data.attempted || contest.data.available
             : !contest.data.attempted && !contest.data.available
         );
-        const latest = contests.find((c) => c.title === 'weekly-contest-462');
+        const latest = contests.length > 0 ? contests[contests.length - 1] : null;
         if (!latest) return null;
   
         const trend = latest.data.new_rating > latest.data.old_rating ? 'UP' : 'DOWN';
@@ -633,7 +633,7 @@ const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
                     : !contest.data.attempted && !contest.data.available
                 );
 
-                const latest = contests.find(c => c.title === "weekly-contest-462");
+                const latest = contests.length > 0 ? contests[contests.length - 1] : null;
                 if (!latest) return null;
 
                 const trend: "UP" | "DOWN" =

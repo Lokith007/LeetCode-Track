@@ -9,6 +9,8 @@ interface Student {
   realname: string;
   rollnumber: string;
   section: string;
+  codechefUsername: string;
+  codeforcesUsername: string;
 }
 
 // GraphQL Mutation
@@ -45,6 +47,9 @@ export default function CsvUploader({ batch }: { batch: string }) {
             realname: clean(row['realname']),
             rollnumber: clean(row['roll number']),
             section: clean(row['section']),
+            codechefUsername:clean(row['codechefusername']),
+            codeforcesUsername:clean(row['codeforcesusername'])
+
           }))
           .filter((s: Student) => s.username !== '');
 

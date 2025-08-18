@@ -29,20 +29,24 @@ const GET_PAGINATED_STUDENTS = gql`
               totalSolved
             }
           }
+
           recentContests {
             attended
             contestId
             contestName
             startTime
             userPerformance {
+
               newRating
               oldRating
               rank
               ratingChange
               division
+
               wasEligible
             }
           }
+          titlePhoto
         }
       }
       nextCursor
@@ -73,6 +77,7 @@ export default function Leaderboard({ batch, section }: { batch: string; section
       setNextCursor(data.paginatedStudents.nextCursor);
       setCursorHistory(['', data.paginatedStudents.nextCursor].filter(Boolean));
       setPage(0);
+
     },
     fetchPolicy: 'cache-and-network',
   });
@@ -110,6 +115,7 @@ export default function Leaderboard({ batch, section }: { batch: string; section
       setFetchLoading(false);
     }
   };
+
 
   const sectionFiltered = useMemo(() => {
     return students
@@ -375,6 +381,7 @@ export default function Leaderboard({ batch, section }: { batch: string; section
               </div>
             )}
           </>
+
         )}
       </div>
     </div>
