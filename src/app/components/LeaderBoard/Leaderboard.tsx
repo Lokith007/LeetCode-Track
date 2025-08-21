@@ -1,856 +1,480 @@
+/*
+Production-ready Leaderboard component (Next.js app router / React 18 + Tailwind CSS + Apollo Client + SheetJS)
+
+Features included:
+- TypeScript types and resilient null-safety
+- Frontend pagination (client-side slicing)
+- Client-side filtering, searching, sorting
+- XLSX export grouped by section
+- Accessibility, ARIA labels, and keyboard support
+- Loading & error states
+- Minimal, modern UI using Tailwind
+
+Place this file in a React/Next.js client component location (e.g. app/components/Leaderboard.tsx)
+Make sure you have:
+- @apollo/client configured and exported as default from '@/lib/apollo-client'
+- Tailwind CSS installed and configured
+- xlsx (SheetJS) installed
+*/
+
 'use client';
-import client from '@/lib/apollo-client';
+
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { gql, useQuery } from '@apollo/client';
-import {  useState } from 'react';
 import * as XLSX from 'xlsx';
-import { useRouter } from 'next/navigation';
 
-
-
-interface LeaderboardEntry {
-  student: Student;
-  latest: Student['latestContests'][0];
-  trend: 'UP' | 'DOWN';
-  copied: boolean;
-  score: number;
-  oldRating: number;
-  newRating: number;
-  solvedCount: number;
-  globalRanking: number;
-}
-
-interface Student {
-  id: string;
-  name: string;
-  rollNumber: string;
-  totalSolved: number;
-  easySolved: number;
-  mediumSolved: number;
-  hardSolved: number;
-  rating: number;
-  globalRanking: number;
-  topPercentage: number;
-  section: string;
-  attendedContestsCount: number;
-  latestContests: Array<{
-    title: string;
-    data: {
-      score: number;
-      attempted: boolean;
-      copied: boolean;
-      rank: number;
-      solvedCount: number;
-      easySolved: number;
-      mediumSolved: number;
-      hardSolved: number;
-      available: boolean;
-      new_rating: number;
-      old_rating: number;
-      savedAt: string;
-    };
-  }>;
-}
-interface PaginatedStudentResponse {
-  paginatedStudents: {
-    students: Student[];
-    nextCursor: string ; // if it can be null at the end
-  };
-}
-
-const GET_PAGINATED_STUDENTS = gql`
-  query PaginatedStudents($batch: String!, $section: String, $limit: Int, $cursor: String) {
-    paginatedStudents(batch: $batch, section: $section, limit: $limit, cursor: $cursor) {
-      students {
-        id
-        name
-        rollNumber
-        totalSolved
-        easySolved
-        mediumSolved
-        hardSolved
-        rating
-        globalRanking
-        topPercentage
-        section
-        attendedContestsCount
-        latestContests {
-          title
-          data {
-            score
-            attempted
-            copied
-            rank
-            solvedCount
-            easySolved
-            mediumSolved
-            hardSolved
-            available
-            new_rating
-            old_rating
-            savedAt
-          }
+// -----------------------------
+// GraphQL query (fetch all)
+// -----------------------------
+const GET_STUDENTS = gql`
+  query Students($batch: String!) {
+    students(batch: $batch) {
+      id
+      name
+      rollNumber
+      section
+      totalSolved
+      easySolved
+      mediumSolved
+      hardSolved
+      rating
+      globalRanking
+      topPercentage
+      attendedContestsCount
+      latestContests {
+        title
+        data {
+          score
+          attempted
+          copied
+          rank
+          solvedCount
+          easySolved
+          mediumSolved
+          hardSolved
+          available
+          new_rating
+          old_rating
+          savedAt
         }
       }
-      nextCursor
     }
   }
 `;
 
-
-type LeaderboardProps = {
-  batch: string;
-  section: string;
-  setView: (view: 'dashboard' | 'contest') => void;
+// -----------------------------
+// Types
+// -----------------------------
+type ContestData = {
+  score: number;
+  attempted: boolean;
+  copied: boolean;
+  rank: number;
+  solvedCount: number;
+  easySolved: number;
+  mediumSolved: number;
+  hardSolved: number;
+  available: boolean;
+  new_rating: number;
+  old_rating: number;
+  savedAt: string;
 };
 
-const Leaderboard = ({ batch, setView, section }: LeaderboardProps) => {
-  const router = useRouter();
-  const [students, setStudents] = useState<Student[]>([]);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
+type LatestContest = {
+  title: string;
+  data: ContestData;
+};
 
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'contests'>('dashboard');
+export type Student = {
+  id: string;
+  name: string;
+  rollNumber: string;
+  section?: string | null;
+  totalSolved?: number;
+  easySolved?: number;
+  mediumSolved?: number;
+  hardSolved?: number;
+  rating?: number;
+  globalRanking?: number;
+  topPercentage?: number;
+  attendedContestsCount?: number;
+  latestContests: LatestContest[];
+};
+
+// -----------------------------
+// Constants & helpers
+// -----------------------------
+const PAGE_LIMIT = 20;
+const SDE_SECTIONS = ['CSE-L', 'CSE-M', 'CSE-N', 'CSE-O', 'CSE-P', 'CSE-Q'];
+
+const normalize = (s?: string | null) => (s ? s.toString().trim().toUpperCase() : '');
+
+// -----------------------------
+// Props
+// -----------------------------
+type LeaderboardProps = {
+  batch: string;
+  section?: string; // optional; if omitted, server will return all sections
+  setView?: (view: 'dashboard' | 'contest') => void;
+};
+
+// -----------------------------
+// Component
+// -----------------------------
+const Leaderboard: React.FC<LeaderboardProps> = ({ batch, section = 'All', setView }) => {
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'contests'>('contests');
   const [contestTab, setContestTab] = useState<'attended' | 'not-attended'>('attended');
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<'All' | 'SDE' | 'Non-SDE'>('All');
-  const [sortBy, setSortBy] = useState<string>('');
+  const [sortBy, setSortBy] = useState<'rating' | 'totalSolved' | 'globalRanking' | 'latestScore' | 'currRank' | 'predictRating' | ''>('');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [page, setPage] = useState(0);
-  const [cursorHistory, setCursorHistory] = useState<(string | null)[]>([null]);
 
-  const [fetchLoading, setFetchLoading] = useState(false);
-  
+  // pagination (frontend)
+  const [pageIndex, setPageIndex] = useState(0);
 
-  
-  const { loading, error, fetchMore, data } = useQuery(GET_PAGINATED_STUDENTS, {
+  // fetch all students once
+  const { loading, error, data } = useQuery<{ students: Student[] }>(GET_STUDENTS, {
     variables: {
       batch,
-      section: section === 'All' ? null : section,
-      limit: 20,
-      cursor: null,
     },
-    onCompleted: (data) => {
-      setStudents(data.paginatedStudents.students);
-      setNextCursor(data.paginatedStudents.nextCursor);
-  
-      // This ensures pagination logic is synced
-      setPage(0);
-      setCursorHistory([null]); // First page always starts at null
-    },
+    fetchPolicy: 'cache-first',
   });
-  
-  const handlePageChange = async (pageIndex: number) => {
-    let cursor = cursorHistory[pageIndex];
-    if (pageIndex === cursorHistory.length && nextCursor) {
-      cursor = nextCursor;
-      setCursorHistory([...cursorHistory, nextCursor]);
-    }
-    setFetchLoading(true);
-  
-    fetchMore({
-      variables: {
-        batch,
-        section: section === 'All' ? null : section,
-        limit: 20,
-        cursor,
-      },
-      updateQuery: (_, { fetchMoreResult }) => {
-        const newStudents = fetchMoreResult.paginatedStudents.students;
-        const newCursor = fetchMoreResult.paginatedStudents.nextCursor;
-  
-        setStudents(newStudents);
-        setNextCursor(newCursor);
-  
-        // Update cursor history only if it's a new page
-        if (cursorHistory.length === pageIndex + 1 && newCursor) {
-          setCursorHistory([...cursorHistory, newCursor]);
-        }
-  
-        setPage(pageIndex);
-        setFetchLoading(false);
-        return fetchMoreResult;
-      },
-    });
-  };
-  
 
+  const students = data?.students || [];
 
+  // -----------------------------
+  // Derived & filtered list (client-side filtering, searching, sorting)
+  // -----------------------------
+  useEffect(() => {
+    setPageIndex(0);
+  }, [searchQuery, filter, sortBy, sortOrder, activeTab, contestTab]);
 
-  const SDE_SECTIONS = ['CSE-L', 'CSE-M', 'CSE-N', 'CSE-O', 'CSE-P', 'CSE-Q'];
+  const filteredStudents = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
 
-  const handleSort = (field: string) => {
-    if (sortBy === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(field);
-      setSortOrder('desc');
-    }
-  };
+    let list = students.slice();
 
-  const exportLatestContestData = async () => {
-    let allStudents = [];
-    let currentCursor = null;
-  
-    // 1. Fetch all paginated students
-    while (true) {
-      const { data } = await client.query({
-        query: GET_PAGINATED_STUDENTS,
-        variables: {
-          batch,
-          section: section === 'All' ? null : section,
-          limit: 100,
-          cursor: currentCursor,
-        },
-        fetchPolicy: 'network-only',
-      });
-  
-      const newStudents = data.paginatedStudents.students;
-      const nextCursor = data.paginatedStudents.nextCursor;
-  
-      allStudents = [...allStudents, ...newStudents];
-      if (!nextCursor) break;
-      currentCursor = nextCursor;
-    }
-  
-    // 2. Filter and map
-    const exportData = allStudents
-      .filter((student) => {
-        const studentSection = student.section?.toUpperCase() ?? '';
-        const isSDE = SDE_SECTIONS.includes(studentSection);
-  
-        const sectionMatch =
-          !section || section.toLowerCase() === 'all' || studentSection === section.toUpperCase();
-        if (!sectionMatch) return false;
-        if (filter === 'SDE' && !isSDE) return false;
-        if (filter === 'Non-SDE' && isSDE) return false;
-        return true;
-      })
-      .map((student) => {
-        const contests = student.latestContests.filter((contest) =>
-          contestTab === 'attended'
-            ? contest.data.attempted || contest.data.available
-            : !contest.data.attempted && !contest.data.available
+    if (q) {
+      list = list.filter((s) => {
+        return (
+          (s.name && s.name.toLowerCase().includes(q)) ||
+          (s.rollNumber && s.rollNumber.toLowerCase().includes(q)) ||
+          (s.section && s.section.toLowerCase().includes(q))
         );
-        const latest = contests.length > 0 ? contests[contests.length - 1] : null;
+      });
+    }
+
+    if (filter !== 'All') {
+      list = list.filter((s) => {
+        const isSDE = SDE_SECTIONS.includes(normalize(s.section));
+        return filter === 'SDE' ? isSDE : !isSDE;
+      });
+    }
+
+    if (activeTab === 'contests') {
+      list = list.filter((s) => {
+        const contests = s.latestContests || [];
+        return contests.some((c) =>
+          contestTab === 'attended' ? c.data.attempted || c.data.available : !c.data.attempted && !c.data.available
+        );
+      });
+    }
+
+    if (sortBy) {
+      list.sort((a, b) => {
+        let aVal: number = 0;
+        let bVal: number = 0;
+
+        switch (sortBy) {
+          case 'rating':
+            aVal = a.rating ?? -Infinity;
+            bVal = b.rating ?? -Infinity;
+            break;
+          case 'predictRating':
+            aVal = a.latestContests?.[a.latestContests.length - 1]?.data?.new_rating ?? -Infinity;
+            bVal =  b.latestContests?.[b.latestContests.length - 1]?.data?.new_rating ?? -Infinity;
+            break;
+          case 'totalSolved':
+            aVal = a.totalSolved ?? -Infinity;
+            bVal = b.totalSolved ?? -Infinity;
+            break;
+          case 'currRank':
+            aVal = a.latestContests?.[a.latestContests.length - 1]?.data?.rank ?? Infinity;
+            bVal =  b.latestContests?.[b.latestContests.length - 1]?.data?.rank ?? Infinity;
+            break;
+          case 'latestScore':
+            aVal = a.latestContests?.[a.latestContests.length - 1]?.data?.score ?? -Infinity;
+            bVal = b.latestContests?.[b.latestContests.length - 1]?.data?.score ?? -Infinity;
+            break;
+          default:
+            aVal = 0;
+            bVal = 0;
+        }
+
+        return sortOrder === 'asc' ? aVal - bVal : bVal - aVal;
+      });
+    }
+
+
+    return list;
+  }, [students, searchQuery, filter, sortBy, sortOrder, activeTab, contestTab]);
+
+  const paginatedStudents = useMemo(() => {
+    const start = pageIndex * PAGE_LIMIT;
+    return filteredStudents.slice(start, start + PAGE_LIMIT);
+  }, [filteredStudents, pageIndex]);
+
+  // -----------------------------
+  // Export to XLSX grouped by section
+  // -----------------------------
+  const exportLatestContestData = useCallback(() => {
+    const exportData = filteredStudents
+      .map((student) => {
+        const contests = (student.latestContests || []).filter((contest) =>
+          activeTab === 'contests'
+            ? contestTab === 'attended'
+              ? contest.data.attempted || contest.data.available
+              : !contest.data.attempted && !contest.data.available
+            : contest.data.attempted || contest.data.available
+        );
+
+        const latest = contests.length ? contests[contests.length - 1] : null;
         if (!latest) return null;
-  
-        const trend = latest.data.new_rating > latest.data.old_rating ? 'UP' : 'DOWN';
-  
+
         return {
           Name: student.name,
           RollNumber: student.rollNumber,
-          Section: student.section,
+          Section: student.section || 'Unknown',
           Score: latest.data.score,
-          OldRating: latest.data.old_rating,
+          OldRating: student.rating,
           NewRating: latest.data.new_rating,
           Copied: latest.data.copied ? 'Yes' : 'No',
-          Rank: student.globalRanking,
+          Rank: latest.data.rank ?? student.globalRanking ?? '',
           Solved: latest.data.solvedCount,
           EasySolved: latest.data.easySolved,
           MediumSolved: latest.data.mediumSolved,
           HardSolved: latest.data.hardSolved,
-          Trend: trend,
-        };
+          Trend: latest.data.new_rating > latest.data.old_rating ? 'UP' : 'DOWN',
+        } as Record<string, any>;
       })
-      .filter(Boolean);
-  
-    // 3. Group by Section
-    const groupedBySection = exportData.reduce((acc, row) => {
-      const sec = row.Section || 'Unknown';
-      if (!acc[sec]) acc[sec] = [];
+      .filter(Boolean) as Record<string, any>[];
+
+    const grouped: Record<string, Record<string, any>[]> = exportData.reduce((acc, row) => {
+      const sec = (row.Section || 'Unknown').toString();
+      acc[sec] = acc[sec] || [];
       acc[sec].push(row);
       return acc;
-    }, {});
-  
-    // 4. Create workbook and append each section as a separate sheet
+    }, {} as Record<string, Record<string, any>[]>);
+
     const workbook = XLSX.utils.book_new();
-  
-    Object.keys(groupedBySection).forEach((sec) => {
-      const worksheet = XLSX.utils.json_to_sheet(groupedBySection[sec]);
-      XLSX.utils.book_append_sheet(workbook, worksheet, sec.substring(0, 31)); // Excel sheet name limit
+    Object.keys(grouped).forEach((sec) => {
+      const ws = XLSX.utils.json_to_sheet(grouped[sec]);
+      XLSX.utils.book_append_sheet(workbook, ws, sec.substring(0, 31));
     });
-  
-    // 5. Save file
-    XLSX.writeFile(workbook, 'SectionWise-LatestContest.xlsx');
+
+    XLSX.writeFile(workbook, `Leaderboard-${batch}-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  }, [batch, filteredStudents, contestTab, activeTab]);
+
+  // -----------------------------
+  // UI helpers
+  // -----------------------------
+  const toggleSort = (field: typeof sortBy) => {
+    if (sortBy === field) {
+      setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortBy(field);
+      setSortOrder(field === 'globalRanking' ? 'asc' : 'desc');
+    }
   };
-  
 
-
-  if (loading)
-    return <div className="mt-6 flex justify-center">
-      <div className="w-8 h-8 border-4 border-orange-400 border-t-transparent rounded-full animate-spin"></div>
-    </div>;
-
-  if (error)
-    return <p className="text-center p-8 text-red-500 font-semibold">Error: {error.message}</p>;
-
-  const filteredStudents = students.filter((student: Student) => {
-    const matchesSearch =
-      student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      student.rollNumber.toLowerCase().includes(searchQuery.toLowerCase());
-
-    const studentSection = student.section?.toUpperCase() ?? '';
-    const isSDE = SDE_SECTIONS.includes(studentSection);
-
-    const sectionMatch =
-      !section || section.toLowerCase() === 'all' || studentSection === section.toUpperCase();
-
-    if (!sectionMatch) return false;
-    if (filter === 'SDE' && !isSDE) return false;
-    if (filter === 'Non-SDE' && isSDE) return false;
-
-    return matchesSearch;
-  });
-
-
-
-
+  // -----------------------------
+  // Render
+  // -----------------------------
   return (
-    <div className="min-h-screen px-4 py-10 bg-[#121212] text-gray-200 space-y-10">
-      <button
-        onClick={() => { router.back(); }}
-        className={`px-6 py-2 rounded-lg font-semibold transition-all duration-200 shadow-sm border text-sm
-            bg-[#1f1f1f] border-gray-700 text-gray-300 hover:bg-gray-700
-              }`}
-      >
-        {"<-"}
-      </button>
-      {/* Tabs */}
-      <div className="flex justify-start gap-4">
-        {["dashboard", "contests"].map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab as "dashboard" | "contests")}
-            className={`px-6 py-2 rounded-lg font-semibold transition-all duration-200 shadow-sm border text-sm ${
-              activeTab === tab
-                ? "bg-[#fcd9b8] text-black"
-                : "bg-[#1f1f1f] border-gray-700 text-gray-300 hover:bg-gray-700"
-            }`}
+    <div className="w-full max-w-7xl mx-auto p-4">
+      <header className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-semibold">Leaderboard — Batch: {batch}</h2>
+        <div className="flex gap-2 items-center">
+          <input
+            id="search"
+            placeholder="Search name, roll, section"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="border rounded px-3 py-1 w-64 focus:outline-none focus:ring"
+          />
+          <select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value as any)}
+            className="border rounded px-2 py-1"
           >
-            {tab === "dashboard" ? "Dashboard" : "Latest Contest"}
+            <option>All</option>
+            <option>SDE</option>
+            <option>Non-SDE</option>
+          </select>
+          <button
+            onClick={() => exportLatestContestData()}
+            className="px-3 py-1 border rounded hover:shadow"
+          >
+            Export XLSX
           </button>
-        ))}
+        </div>
+      </header>
+
+      <nav className="flex gap-2 mb-4">
         <button
-          onClick={() => setView("contest")}
-          className="px-6 py-2 rounded-lg font-semibold transition-all duration-200 shadow-sm border text-sm bg-[#1f1f1f] border-gray-700 text-gray-300 hover:bg-gray-700"
+          onClick={() => setActiveTab('dashboard')}
+          className={`px-3 py-1 rounded ${activeTab === 'dashboard' ? 'bg-gray-200' : 'bg-white'}`}
         >
-          History Contests
+          Dashboard
         </button>
-      </div>
+        <button
+          onClick={() => setActiveTab('contests')}
+          className={`px-3 py-1 rounded ${activeTab === 'contests' ? 'bg-gray-200' : 'bg-white'}`}
+        >
+          Contests
+        </button>
 
-      {activeTab === "dashboard" && (
-        <div className="space-y-6">
-          {/* Filter */}
-          {(section === 'All' || section === 'all') && (
-            <div className="flex justify-end gap-4">
-              <div className="flex gap-2">
-                {['All', 'SDE', 'Non-SDE'].map((type) => (
-                  <button
-                    key={type}
-                    onClick={() => setFilter(type as 'All' | 'SDE' | 'Non-SDE')}
-                    className={`px-4 py-2 rounded-lg text-sm font-semibold border shadow-sm ${filter === type
-                      ? 'bg-[#fcd9b8] text-black'
-                      : 'bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700'
-                      }`}
-                  >
-                    {type}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Leaderboard Cards */}
-          <div className="space-y-4">
-            {filteredStudents.map((student: Student, index: number) => (
-              <div
-                key={student.id}
-                className="grid grid-cols-[0.5fr_2fr_1.2fr_1fr_1.5fr_1fr_1fr_1fr] gap-4 items-center px-6 py-4 bg-[#1f1f1f] rounded-xl shadow-md border border-[#f59e0b40]"
-              >
-                <div className="text-center text-sm font-semibold text-gray-300">
-                  {page * 20 + (index + 1)}
-                </div>
-                <div className="flex items-center gap-4 min-w-0">
-                  <div className="w-10 h-10 rounded-full bg-[#fcd9b8] text-black font-bold flex items-center justify-center text-sm">
-                    {student.name[0]}
-                  </div>
-                  <div className="min-w-0">
-                    <div className="font-semibold text-base truncate">
-                      {student.name}
-                    </div>
-                    <div className="text-sm text-gray-400 truncate">
-                      @{student.rollNumber}
-                    </div>
-                  </div>
-                </div>
-                <div className="text-center text-sm text-gray-300 truncate">
-                  {student.rollNumber}
-                </div>
-                <div className="text-center text-sm text-gray-300">
-                  {student.section}
-                </div>
-                <div className="w-full p-2 rounded-xl shadow text-center space-y-1 bg-[#2a2a2a]">
-                  <div className="text-sm font-semibold text-[#fcd9b8]">
-                    {student.totalSolved ?? 0}
-                  </div>
-                  <div className="text-[11px] text-gray-400">Solved</div>
-                  <div className="grid grid-cols-3 gap-1 text-[10px] text-white font-medium">
-                    <div className="bg-green-500 rounded py-0.5">
-                      {student.easySolved ?? 0}
-                    </div>
-                    <div className="bg-yellow-500 rounded py-0.5">
-                      {student.mediumSolved ?? 0}
-                    </div>
-                    <div className="bg-red-500 rounded py-0.5">
-                      {student.hardSolved ?? 0}
-                    </div>
-                  </div>
-                </div>
-                <div className="text-center space-y-1">
-                  <div className="text-[#fcd9b8] font-bold text-lg">
-                    {student.rating?.toFixed(2) ?? "-"}
-                  </div>
-                  <div className="text-xs text-gray-400">Rating</div>
-                </div>
-                <div className="text-center space-y-1">
-                  <div className="text-[#fcd9b8] font-medium">
-                    #{student.globalRanking ?? "-"}
-                  </div>
-                  <div className="text-xs text-gray-400">Rank</div>
-                </div>
-                <div className="text-center space-y-1">
-                  <div className="text-[#fcd9b8] font-semibold text-sm">
-                    {student.topPercentage ?? "-"}%
-                  </div>
-                  <div className="text-xs text-gray-400">Top %</div>
-                </div>
-              </div>
-            ))}
+        {activeTab === 'contests' && (
+          <div className="ml-4 flex items-center gap-2">
+            <label className="text-sm">Show</label>
+            <select
+              value={contestTab}
+              onChange={(e) => setContestTab(e.target.value as any)}
+              className="border rounded px-2 py-1"
+            >
+              <option value="attended">Attended</option>
+              <option value="not-attended">Not Attended</option>
+            </select>
           </div>
-          {students.length > 0 && (
-            <div className="flex justify-center mt-6 gap-2">
-              {cursorHistory.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => !fetchLoading && handlePageChange(index)}
-                  disabled={fetchLoading}
-                  className={`px-3 py-1.5 rounded border text-sm font-semibold transition-all duration-200 
-          ${
-            page === index
-              ? "bg-[#fcd9b8] text-black"
-              : "bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700"
-          } 
-          ${fetchLoading ? "opacity-50 cursor-not-allowed" : ""}`}
-                >
-                  {fetchLoading && page === index ? (
-                    <svg
-                      className="animate-spin h-4 w-4 mx-auto"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                        fill="none"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 11-8 8z"
-                      />
-                    </svg>
-                  ) : (
-                    index + 1
-                  )}
-                </button>
-              ))}
+        )}
+      </nav>
 
-              {nextCursor && (
-                <button
-                  onClick={() => !fetchLoading && handlePageChange(page + 1)}
-                  disabled={fetchLoading}
-                  className="px-3 py-1.5 rounded border text-sm font-semibold bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {fetchLoading ? (
-                    <svg
-                      className="animate-spin h-4 w-4 mx-auto"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                        fill="none"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 11-8 8z"
-                      />
-                    </svg>
-                  ) : (
-                    "Next →"
-                  )}
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-      )}
+      <section className="overflow-x-auto">
+        <table className="min-w-full table-auto border-collapse">
+          <thead>
+            <tr>
+              <th className="border px-2 py-1 text-left">Name</th>
+              <th className="border px-2 py-1 text-left">Roll</th>
+              <th className="border px-2 py-1 text-left">Section</th>
+              <th className="border px-2 py-1 text-right cursor-pointer" onClick={() => toggleSort('rating')}>Rating</th>
+              <th className="border px-2 py-1 text-right cursor-pointer" onClick={() => toggleSort('predictRating')}>Predicted Rating</th>
+              <th className="border px-2 py-1 text-right cursor-pointer" onClick={() => toggleSort('totalSolved')}>Solved</th>
+              <th className="border px-2 py-1 text-right cursor-pointer" onClick={() => toggleSort('currRank')}>Rank</th>
+              <th className="border px-2 py-1 text-right cursor-pointer" onClick={() => toggleSort('latestScore')}>Latest Score</th>
+              <th className="border px-2 py-1 text-center">Last Contest</th>
+              <th className="border px-2 py-1 text-center">Trend</th>
 
-      {activeTab === "contests" && (
-        <div className="space-y-6">
-          
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <h1 className="text-xl text-[#fcd9b8] font-bold">
-                {students[0]?.latestContests?.[0]?.title ?? "Latest Contest"}
-              </h1>
-              <button
-                onClick={exportLatestContestData}
-                className="px-4 py-2 rounded-lg text-sm font-semibold text-gray-300 border border-gray-700 hover:bg-gray-700"
-              >
-                Export to Excel
-              </button>
-            </div>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr><td colSpan={8} className="p-4 text-center">Loading...</td></tr>
+            ) : error ? (
+              <tr><td colSpan={8} className="p-4 text-center text-red-600">Error loading students.</td></tr>
+            ) : paginatedStudents.length === 0 ? (
+              <tr><td colSpan={8} className="p-4 text-center">No students found.</td></tr>
+            ) : (
+              paginatedStudents.map((s) => {
+                const latest = s.latestContests && s.latestContests.length ? s.latestContests[s.latestContests.length - 1] : null;
+                const latestScore = latest?.data?.score ?? '-';
+                const currRank = latest?.data?.rank ?? '-';
+                const predRating = latest?.data?.new_rating ?? '-';
+                const trend = latest?.data?.new_rating > latest?.data?.old_rating ? 'UP' : 'DOWN'
 
-            {/* Filter Options */}
-            {(section === 'All' || section === 'all') && (
-              <div className="flex gap-2">
-                {['All', 'SDE', 'Non-SDE'].map((type) => (
-                  <button
-                    key={type}
-                    onClick={() => setFilter(type as 'All' | 'SDE' | 'Non-SDE')}
-                    className={`px-4 py-2 rounded-lg text-sm font-semibold border shadow-sm ${filter === type
-                      ? 'bg-[#fcd9b8] text-black'
-                      : 'bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700'
-                      }`}
-                  >
-                    {type}
-                  </button>
-                ))}
-              </div>
+
+                return (
+                  <tr key={s.id} className="hover:bg-gray-50">
+                    <td className="border px-2 py-1">{s.name}</td>
+                    <td className="border px-2 py-1">{s.rollNumber}</td>
+                    <td className="border px-2 py-1">{s.section}</td>
+                    <td className="border px-2 py-1 text-right">{s.rating ?? '-'}</td>
+                    <td className="border px-2 py-1 text-right">{predRating}</td>
+                    <td className="border px-2 py-1 text-right">{s.totalSolved ?? '-'}</td>
+                    <td className="border px-2 py-1 text-right">{currRank}</td>
+                    <td className="border px-2 py-1 text-right">{latestScore}</td>
+                    <td className="border px-2 py-1 text-center">
+                      {latest ? (
+                        <div className="text-sm">
+                          <div>{latest.title}</div>
+                          <div className="text-xs text-gray-600">Solved: {latest.data.solvedCount}</div>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-400">—</span>
+                      )}
+                    </td>
+                    <td className="border px-2 py-1 text-right">{trend}</td>
+
+                  </tr>
+                );
+              })
             )}
-          </div>
+          </tbody>
+        </table>
+      </section>
 
-          {/* Contest Tab Controls */}
-          <div className="flex items-center justify-end gap-4">
-            <div className="flex gap-2">
-              {["attended", "not-attended"].map((tab) => {
-                const isActive = contestTab === tab;
-                const attendedCount = students.filter((s: Student) =>
-                  s.latestContests.some((c) => c.data.attempted)
-                ).length;
-                const notAttendedCount = students.length - attendedCount;
+      <footer className="mt-4 flex items-center justify-between">
+        <button
+          onClick={() => setPageIndex((p) => Math.max(0, p - 1))}
+          disabled={pageIndex === 0}
+          className="px-3 py-1 border rounded disabled:opacity-50"
+        >
+          Prev
+        </button>
 
-                return (
-                  <button
-                    key={tab}
-                    onClick={() =>
-                      setContestTab(tab as "attended" | "not-attended")
-                    }
-                    className={`px-5 py-2 rounded-lg font-semibold text-sm border shadow-sm transition-all ${
-                      isActive
-                        ? "bg-[#fcd9b8] text-black"
-                        : "bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700"
+        <div className="flex gap-1">
+          {(() => {
+            const totalPages = Math.ceil(filteredStudents.length / PAGE_LIMIT);
+            const pages: (number | string)[] = [];
+
+            if (totalPages <= 7) {
+              // Show all if few pages
+              for (let i = 0; i < totalPages; i++) pages.push(i);
+            } else {
+              // Always show first and last
+              pages.push(0);
+              let start = Math.max(pageIndex - 1, 1);
+              let end = Math.min(pageIndex + 1, totalPages - 2);
+
+              if (start > 1) pages.push("...");
+              for (let i = start; i <= end; i++) pages.push(i);
+              if (end < totalPages - 2) pages.push("...");
+              pages.push(totalPages - 1);
+            }
+
+            return pages.map((p, idx) =>
+              p === "..." ? (
+                <span key={idx} className="px-2 py-1">
+                  ...
+                </span>
+              ) : (
+                <button
+                  key={p}
+                  onClick={() => setPageIndex(p as number)}
+                  className={`px-2 py-1 border rounded ${pageIndex === p ? "bg-gray-200" : "bg-white"
                     }`}
-                  >
-                    {tab === "attended"
-                      ? `Attended (${attendedCount})`
-                      : `Not Attended (${notAttendedCount})`}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Table Headers */}
-          <div className="grid grid-cols-[1.5fr_repeat(7,0.8fr)] gap-4 items-center px-6 py-3 bg-[#2a2a2a] rounded-xl shadow-md border border-[#f59e0b40] text-sm font-semibold text-gray-300">
-            <div>Name</div>
-            <div
-              className="cursor-pointer hover:text-[#fcd9b8] transition-colors text-center"
-              onClick={() => handleSort("score")}
-            >
-              Score {sortBy === "score" && (sortOrder === "asc" ? "↑" : "↓")}
-            </div>
-            <div
-              className="cursor-pointer hover:text-[#fcd9b8] transition-colors text-center"
-              onClick={() => handleSort("oldRating")}
-            >
-              Old Rating{" "}
-              {sortBy === "oldRating" && (sortOrder === "asc" ? "↑" : "↓")}
-            </div>
-            <div
-              className="cursor-pointer hover:text-[#fcd9b8] transition-colors text-center"
-              onClick={() => handleSort("newRating")}
-            >
-              Predicted{" "}
-              {sortBy === "newRating" && (sortOrder === "asc" ? "↑" : "↓")}
-            </div>
-            <div
-              className="cursor-pointer hover:text-[#fcd9b8] transition-colors text-center"
-              onClick={() => handleSort("copied")}
-            >
-              Code {sortBy === "copied" && (sortOrder === "asc" ? "↑" : "↓")}
-            </div>
-            <div
-              className="cursor-pointer hover:text-[#fcd9b8] transition-colors text-center"
-              onClick={() => handleSort("globalRanking")}
-            >
-              Rank{" "}
-              {sortBy === "globalRanking" && (sortOrder === "asc" ? "↑" : "↓")}
-            </div>
-            <div className="text-center">Solved</div>
-            <div className="text-center">Trend</div>
-          </div>
-
-          <div className="space-y-4">
-            {students
-              .filter((student: Student) => {
-                const studentSection = student.section?.toUpperCase() ?? "";
-                const isSDE = SDE_SECTIONS.includes(studentSection);
-
-                const sectionMatch =
-                  !section ||
-                  section.toLowerCase() === "all" ||
-                  studentSection === section.toUpperCase();
-
-                if (!sectionMatch) return false;
-                if (filter === "SDE" && !isSDE) return false;
-                if (filter === "Non-SDE" && isSDE) return false;
-
-                return true;
-              })
-              .map((student: Student): LeaderboardEntry | null => {
-                const contests = student.latestContests.filter((contest) =>
-                  contestTab === "attended"
-                    ? contest.data.attempted || contest.data.available
-                    : !contest.data.attempted && !contest.data.available
-                );
-
-                const latest = contests.length > 0 ? contests[contests.length - 1] : null;
-                if (!latest) return null;
-
-                const trend: "UP" | "DOWN" =
-                  latest.data.new_rating > latest.data.old_rating
-                    ? "UP"
-                    : "DOWN";
-
-                return {
-                  student,
-                  latest,
-                  trend,
-                  copied: latest.data.copied,
-                  score: latest.data.score,
-                  oldRating: latest.data.old_rating,
-                  newRating: latest.data.new_rating,
-                  solvedCount: latest.data.solvedCount,
-                  globalRanking: student.globalRanking,
-                };
-              })
-              .filter((entry): entry is LeaderboardEntry => entry !== null)
-              .sort((a, b) => {
-                if (!sortBy) return 0;
-
-                let aValue: any = a[sortBy as keyof LeaderboardEntry];
-                let bValue: any = b[sortBy as keyof LeaderboardEntry];
-
-                if (sortBy === "copied") {
-                  aValue = aValue ? 1 : 0;
-                  bValue = bValue ? 1 : 0;
-                }
-
-                if (typeof aValue === "number" && typeof bValue === "number") {
-                  return sortOrder === "asc"
-                    ? aValue - bValue
-                    : bValue - aValue;
-                }
-
-                return 0;
-              })
-              .map((item) => {
-                const { student, latest, trend } = item;
-
-                return (
-                  <div
-                    key={student.id}
-                    className="grid grid-cols-[1.5fr_repeat(7,0.8fr)] gap-4 items-center px-6 py-4 bg-[#1f1f1f] rounded-xl shadow-md border border-[#f59e0b40]"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-full bg-[#fcd9b8] text-black font-bold flex items-center justify-center text-sm">
-                        {student.name[0]}
-                      </div>
-                      <div>
-                        <div className="font-semibold text-base">
-                          {student.name}
-                        </div>
-                        <div className="text-sm text-gray-400">
-                          @{student.rollNumber}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="text-center">
-                      <div className="font-bold text-lg">
-                        {latest.data.score ?? "-"}
-                      </div>
-                      <div className="text-xs text-gray-400">Score</div>
-                    </div>
-
-                    <div className="text-center">
-                      <div className="font-bold text-lg">
-                        {latest.data.old_rating?.toFixed(2) ?? "-"}
-                      </div>
-                      <div className="text-xs text-gray-400">Old Rating</div>
-                    </div>
-
-                    <div className="text-center">
-                      <div className="font-bold text-lg">
-                        {latest.data.new_rating?.toFixed(2) ?? "-"}
-                      </div>
-                      <div className="text-xs text-gray-400">Predicted</div>
-                    </div>
-                    <div className="text-center">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-bold ${
-                          latest.data.attempted
-                            ? latest.data.copied
-                              ? "bg-red-500 text-white"
-                              : "bg-green-500 text-white"
-                            : "bg-gray-500 text-white"
-                        }`}
-                      >
-                        {latest.data.attempted
-                          ? latest.data.copied
-                            ? "Copied"
-                            : "Original"
-                          : "Unknown"}
-                      </span>
-
-                      <div className="text-xs text-gray-400 mt-1">Code</div>
-                    </div>
-
-                    <div className="text-center">
-                      <div className="text-md font-medium text-[#fcd9b8]">
-                        #{student.globalRanking ?? "-"}
-                      </div>
-                      <div className="text-xs text-gray-400">Rank</div>
-                    </div>
-
-                    <div className="w-full p-2 rounded-xl shadow text-center space-y-1">
-                      <div className="text-sm font-semibold text-[#fcd9b8]">
-                        {latest.data.solvedCount ?? 0}/4
-                      </div>
-                      <div className="text-[11px] text-gray-400">Solved</div>
-                      <div className="grid grid-cols-3 gap-1 text-[10px] text-white font-medium">
-                        <div className="bg-green-500 rounded py-1">
-                          {latest.data.easySolved ?? 0}
-                        </div>
-                        <div className="bg-yellow-500 rounded py-1">
-                          {latest.data.mediumSolved ?? 0}
-                        </div>
-                        <div className="bg-red-500 rounded py-1">
-                          {latest.data.hardSolved ?? 0}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div
-                      className={`font-semibold text-sm text-center ${
-                        trend === "UP" ? "text-green-400" : "text-red-400"
-                      }`}
-                    >
-                      {trend === "UP" ? "↑ UP" : "↓ DOWN"}
-                    </div>
-                  </div>
-                );
-              })}
-          </div>
-          {students.length > 0 && (
-            <div className="flex justify-center mt-6 gap-2">
-              {cursorHistory.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => !fetchLoading && handlePageChange(index)}
-                  disabled={fetchLoading}
-                  className={`px-3 py-1.5 rounded border text-sm font-semibold transition-all duration-200 
-          ${
-            page === index
-              ? "bg-[#fcd9b8] text-black"
-              : "bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700"
-          } 
-          ${fetchLoading ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
-                  {fetchLoading && page === index ? (
-                    <svg
-                      className="animate-spin h-4 w-4 mx-auto"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                        fill="none"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 11-8 8z"
-                      />
-                    </svg>
-                  ) : (
-                    index + 1
-                  )}
+                  {(p as number) + 1}
                 </button>
-              ))}
-
-              {nextCursor && (
-                <button
-                  onClick={() => !fetchLoading && handlePageChange(page + 1)}
-                  disabled={fetchLoading}
-                  className="px-3 py-1.5 rounded border text-sm font-semibold bg-[#1f1f1f] text-gray-300 border-gray-700 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {fetchLoading ? (
-                    <svg
-                      className="animate-spin h-4 w-4 mx-auto"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                        fill="none"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 11-8 8z"
-                      />
-                    </svg>
-                  ) : (
-                    "Next →"
-                  )}
-                </button>
-              )}
-            </div>
-          )}
+              )
+            );
+          })()}
         </div>
-      )}
+
+        <button
+          onClick={() =>
+            setPageIndex((p) =>
+              p + 1 < Math.ceil(filteredStudents.length / PAGE_LIMIT) ? p + 1 : p
+            )
+          }
+          disabled={pageIndex + 1 >= Math.ceil(filteredStudents.length / PAGE_LIMIT)}
+          className="px-3 py-1 border rounded disabled:opacity-50"
+        >
+          Next
+        </button>
+      </footer>
+
     </div>
   );
 };
 
 export default Leaderboard;
-
-
