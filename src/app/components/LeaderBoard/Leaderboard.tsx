@@ -286,7 +286,28 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ batch, section = 'All', setVi
       setSortOrder(field === 'globalRanking' ? 'asc' : 'desc');
     }
   };
+// -----------------------------
+// Totals: attended vs not-attended
+// -----------------------------
+const { attendedCount, notAttendedCount } = useMemo(() => {
+  let attended = 0;
+  let notAttended = 0;
 
+  students.forEach((s) => {
+    const contests = s.latestContests || [];
+    const hasAttended = contests.some(
+      (c) => c.data?.attempted || c.data?.available
+    );
+
+    if (hasAttended) {
+      attended++;
+    } else {
+      notAttended++;
+    }
+  });
+
+  return { attendedCount: attended, notAttendedCount: notAttended };
+}, [students]);
   // -----------------------------
   // Render
   // -----------------------------
@@ -345,8 +366,8 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ batch, section = 'All', setVi
               onChange={(e) => setContestTab(e.target.value as any)}
               className="border rounded px-2 py-1"
             >
-              <option value="attended">Attended</option>
-              <option value="not-attended">Not Attended</option>
+              <option value="attended">Attended: {attendedCount}</option>
+              <option value="not-attended">Not Attended: {notAttendedCount}</option>
             </select>
           </div>
 </header>
