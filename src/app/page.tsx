@@ -115,14 +115,7 @@ export default function HomePage() {
                   return aDisplayName.localeCompare(bDisplayName); // tie-break alphabetically
                 });
                 
-                // Debug: Log the sorting results
-                if (dept === 'CSE') {
-                  console.log('CSE batches before sort:', batches.map((b: Batch) => b.name));
-                  console.log('CSE batches after sort:', sortedBatches.map((b: Batch) => b.name));
-                  console.log('CSE batch lengths:', sortedBatches.map((b: Batch) => ({ name: b.name, length: b.name.length })));
-                }
-
-
+              
             return (
               <div key={dept} className="space-y-4">
                 <h2 className="text-2xl font-bold text-orange-400">{dept}</h2>
