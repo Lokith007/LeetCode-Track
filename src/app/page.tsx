@@ -9,6 +9,7 @@ import { useAuth } from "./components/AuthProvider"
 import { gql, useQuery } from "@apollo/client"
 import { getBatchDisplayName, getBatchPriority } from "./data/data"
 import QuickNavButtons from "./components/QuickNavButtons"
+import { classifyBatchIntoDepartment } from "@/lib/utils"
 
 
 // GraphQL query
@@ -36,9 +37,6 @@ export default function HomePage() {
 
   // Extract names into an array of strings
   const batchNames = data?.allBatches?.map((batch: Batch) => batch.name) || []
-
-  console.log("Batch Names:", batchNames)
-  console.log("Batch Display Names:", batchNames.map((name: string) => getBatchDisplayName(name)))
   return (
     <main className="min-h-screen flex flex-col items-center justify-start bg-[#121212] text-orange-400 py-12 px-4 font-sans">
 
@@ -83,92 +81,60 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* All Batches Grid */}
+      {/* All Batches Grid - Dynamically Generated */}
       <div className="w-full max-w-6xl space-y-8">
-        {/* CSE Department */}
-        <div className="space-y-4">
-          <h2 className="text-2xl font-bold text-orange-400">CSE</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {data?.allBatches?.filter((batch: Batch) => 
-              ['batch24-28', 'batch23-27', 'citarIII'].includes(batch.name)
-            ).sort((a: Batch, b: Batch) => getBatchPriority(a.name) - getBatchPriority(b.name)).map((batch: Batch) => (
-              <BatchCard 
-                key={batch.name} 
-                batch={batch.name} 
-                displayName={getBatchDisplayName(batch.name)}
-                secCount={batch.secCount}
-              />
-            ))}
-          </div>
-        </div>
+        {(() => {
+                     // Dynamically classify batches into departments
+           const departmentBatches = data?.allBatches?.reduce((acc: Record<string, Batch[]>, batch: Batch) => {
+             const dept = classifyBatchIntoDepartment(batch.name);
+             if (!acc[dept]) acc[dept] = [];
+             acc[dept].push(batch);
+             return acc;
+           }, {}) || {};
 
-        {/* AIML Department */}
-        <div className="space-y-4">
-          <h2 className="text-2xl font-bold text-orange-400">AIML</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {data?.allBatches?.filter((batch: Batch) => 
-              ['AIML-II', 'AIML-III'].includes(batch.name)
-            ).sort((a: Batch, b: Batch) => getBatchPriority(a.name) - getBatchPriority(b.name)).map((batch: Batch) => (
-              <BatchCard 
-                key={batch.name} 
-                batch={batch.name} 
-                displayName={getBatchDisplayName(batch.name)}
-                secCount={batch.secCount}
-              />
-            ))}
-          </div>
-        </div>
+            // Sort departments alphabetically for consistent display order
+            const departmentOrder = Object.keys(departmentBatches).sort();
 
-        {/* AIDS Department */}
-        <div className="space-y-4">
-          <h2 className="text-2xl font-bold text-orange-400">AIDS</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {data?.allBatches?.filter((batch: Batch) => 
-              ['AIDS-II', 'AIDS-III'].includes(batch.name)
-            ).sort((a: Batch, b: Batch) => getBatchPriority(a.name) - getBatchPriority(b.name)).map((batch: Batch) => (
-              <BatchCard 
-                key={batch.name} 
-                batch={batch.name} 
-                displayName={getBatchDisplayName(batch.name)}
-                secCount={batch.secCount}
-              />
-            ))}
-          </div>
-        </div>
+            return departmentOrder.map((dept) => {
+              const batches = departmentBatches[dept];
+              if (!batches || batches.length === 0) return null;
+              
+                // Sort the batches with hardcoded priority order
+                const sortedBatches = batches.sort((a: Batch, b: Batch) => {
+                  const aName = a.name;  // Use batch name directly
+                  const bName = b.name;  // Use batch name directly
+                  
+                  // Hardcoded priority order: II first, everything else in any order
+                  const getPriority = (name: string) => {
+                    if (name.endsWith('II')) return 1;  // II batches first
+                    return 2;  // Everything else gets same priority (any order)
+                  };
+                  
+                  const aPriority = getPriority(aName);
+                  const bPriority = getPriority(bName);
+                  
+                  return aPriority - bPriority;
+                });
+              
 
-        {/* CYBER Department */}
-        <div className="space-y-4">
-          <h2 className="text-2xl font-bold text-orange-400">CYBER</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {data?.allBatches?.filter((batch: Batch) => 
-              ['CYBER-II', 'CYBER-III'].includes(batch.name)
-            ).sort((a: Batch, b: Batch) => getBatchPriority(a.name) - getBatchPriority(b.name)).map((batch: Batch) => (
-              <BatchCard 
-                key={batch.name} 
-                batch={batch.name} 
-                displayName={getBatchDisplayName(batch.name)}
-                secCount={batch.secCount}
-              />
-            ))}
-          </div>
-        </div>
 
-        {/* CSBS Department */}
-        <div className="space-y-4">
-          <h2 className="text-2xl font-bold text-orange-400">CSBS</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {data?.allBatches?.filter((batch: Batch) => 
-              ['CSBS-II', 'CSBS-III'].includes(batch.name)
-            ).sort((a: Batch, b: Batch) => getBatchPriority(a.name) - getBatchPriority(b.name)).map((batch: Batch) => (
-              <BatchCard 
-                key={batch.name} 
-                batch={batch.name} 
-                displayName={getBatchDisplayName(batch.name)}
-                secCount={batch.secCount}
-              />
-            ))}
-          </div>
-        </div>
+            return (
+              <div key={dept} className="space-y-4">
+                <h2 className="text-2xl font-bold text-orange-400">{dept}</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                  {sortedBatches.map((batch: Batch) => (
+                    <BatchCard 
+                      key={batch.name} 
+                      batch={batch.name} 
+                      displayName={getBatchDisplayName(batch.name)}
+                      secCount={batch.secCount}
+                    />
+                  ))}
+                </div>
+              </div>
+            );
+          });
+        })()}
       </div>
 
       <a
