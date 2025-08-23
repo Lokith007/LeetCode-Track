@@ -103,17 +103,24 @@ export default function HomePage() {
               const batches = departmentBatches[dept];
               if (!batches || batches.length === 0) return null;
             
-                // Sort the batches: shortest name first
+                // Sort the batches: shortest display name first
                 const sortedBatches = batches.sort((a: Batch, b: Batch) => {
-                  const aLen = a.name.length;
-                  const bLen = b.name.length;
+                  const aDisplayName = getBatchDisplayName(a.name);
+                  const bDisplayName = getBatchDisplayName(b.name);
+                  
+                  const aLen = aDisplayName.length;
+                  const bLen = bDisplayName.length;
 
                   if (aLen !== bLen) return aLen - bLen;
-                  return a.name.localeCompare(b.name); // tie-break alphabetically
+                  return aDisplayName.localeCompare(bDisplayName); // tie-break alphabetically
                 });
                 
-
-              
+                // Debug: Log the sorting results
+                if (dept === 'CSE') {
+                  console.log('CSE batches before sort:', batches.map((b: Batch) => b.name));
+                  console.log('CSE batches after sort:', sortedBatches.map((b: Batch) => b.name));
+                  console.log('CSE batch lengths:', sortedBatches.map((b: Batch) => ({ name: b.name, length: b.name.length })));
+                }
 
 
             return (
