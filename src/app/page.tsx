@@ -7,6 +7,9 @@ import { LogOut, User, BarChart3 } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "./components/AuthProvider"
 import { gql, useQuery } from "@apollo/client"
+import { getBatchDisplayName, getBatchPriority } from "./data/data"
+import QuickNavButtons from "./components/QuickNavButtons"
+
 
 // GraphQL query
 const GET_ALL_BATCHES = gql`
@@ -18,6 +21,12 @@ const GET_ALL_BATCHES = gql`
   }
 `
 
+// Type for batch data
+interface Batch {
+  name: string;
+  secCount: number;
+}
+
 export default function HomePage() {
   const { userEmail, logout } = useAuth()
   const { data, loading, error } = useQuery(GET_ALL_BATCHES)
@@ -26,11 +35,14 @@ export default function HomePage() {
   if (error) return <p>Error: {error.message}</p>
 
   // Extract names into an array of strings
-  const batchNames = data?.allBatches?.map(batch => batch.name) || []
+  const batchNames = data?.allBatches?.map((batch: Batch) => batch.name) || []
 
   console.log("Batch Names:", batchNames)
+  console.log("Batch Display Names:", batchNames.map((name: string) => getBatchDisplayName(name)))
   return (
     <main className="min-h-screen flex flex-col items-center justify-start bg-[#121212] text-orange-400 py-12 px-4 font-sans">
+
+      
       {/* Header with user info and logout */}
       <div className="w-full max-w-6xl mb-10 flex justify-between items-center">
         
@@ -64,26 +76,111 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Batch Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 w-full max-w-6xl">
-        <AddBatchCard />
-        {loading && <p className="text-gray-400">Loading batches...</p>}
-        {error && <p className="text-red-400">Error loading batches 😢</p>}
-        {data?.allBatches?.map((batch: { name: string; secCount: number }) => (
-          <BatchCard key={batch.name} batch={batch.name} secCount={batch.secCount} />
-        ))}
+      {/* Add Batch Card */}
+      <div className="w-full max-w-6xl mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          <AddBatchCard />
+        </div>
       </div>
+
+      {/* All Batches Grid */}
+      <div className="w-full max-w-6xl space-y-8">
+        {/* CSE Department */}
+        <div className="space-y-4">
+          <h2 className="text-2xl font-bold text-orange-400">CSE</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            {data?.allBatches?.filter((batch: Batch) => 
+              ['batch24-28', 'batch23-27', 'citarIII'].includes(batch.name)
+            ).sort((a: Batch, b: Batch) => getBatchPriority(a.name) - getBatchPriority(b.name)).map((batch: Batch) => (
+              <BatchCard 
+                key={batch.name} 
+                batch={batch.name} 
+                displayName={getBatchDisplayName(batch.name)}
+                secCount={batch.secCount}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* AIML Department */}
+        <div className="space-y-4">
+          <h2 className="text-2xl font-bold text-orange-400">AIML</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            {data?.allBatches?.filter((batch: Batch) => 
+              ['AIML-II', 'AIML-III'].includes(batch.name)
+            ).sort((a: Batch, b: Batch) => getBatchPriority(a.name) - getBatchPriority(b.name)).map((batch: Batch) => (
+              <BatchCard 
+                key={batch.name} 
+                batch={batch.name} 
+                displayName={getBatchDisplayName(batch.name)}
+                secCount={batch.secCount}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* AIDS Department */}
+        <div className="space-y-4">
+          <h2 className="text-2xl font-bold text-orange-400">AIDS</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            {data?.allBatches?.filter((batch: Batch) => 
+              ['AIDS-II', 'AIDS-III'].includes(batch.name)
+            ).sort((a: Batch, b: Batch) => getBatchPriority(a.name) - getBatchPriority(b.name)).map((batch: Batch) => (
+              <BatchCard 
+                key={batch.name} 
+                batch={batch.name} 
+                displayName={getBatchDisplayName(batch.name)}
+                secCount={batch.secCount}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* CYBER Department */}
+        <div className="space-y-4">
+          <h2 className="text-2xl font-bold text-orange-400">CYBER</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            {data?.allBatches?.filter((batch: Batch) => 
+              ['CYBER-II', 'CYBER-III'].includes(batch.name)
+            ).sort((a: Batch, b: Batch) => getBatchPriority(a.name) - getBatchPriority(b.name)).map((batch: Batch) => (
+              <BatchCard 
+                key={batch.name} 
+                batch={batch.name} 
+                displayName={getBatchDisplayName(batch.name)}
+                secCount={batch.secCount}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* CSBS Department */}
+        <div className="space-y-4">
+          <h2 className="text-2xl font-bold text-orange-400">CSBS</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            {data?.allBatches?.filter((batch: Batch) => 
+              ['CSBS-II', 'CSBS-III'].includes(batch.name)
+            ).sort((a: Batch, b: Batch) => getBatchPriority(a.name) - getBatchPriority(b.name)).map((batch: Batch) => (
+              <BatchCard 
+                key={batch.name} 
+                batch={batch.name} 
+                displayName={getBatchDisplayName(batch.name)}
+                secCount={batch.secCount}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+
       <a
         href="https://bot-leetcode.onrender.com/"
         target="_blank"
         rel="noopener noreferrer"
-        className="fixed bottom-6 right-6 z-50 blinking"
+        className="fixed bottom-6 right-6 z-50"
       >
         <button className="bg-orange-300 text-white px-4 py-3 rounded-full shadow-lg hover:bg-orange-600 transition-all flex items-center gap-2 text-sm font-semibold">
           🧠 Try AI Assistant
         </button>
       </a>
-
 
     </main>
   )

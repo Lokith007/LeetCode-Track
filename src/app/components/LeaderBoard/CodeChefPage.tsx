@@ -212,6 +212,13 @@ export default function Leaderboard({ batch, section }: LeaderboardProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white px-6 py-10">
       <div className="w-full max-w-7xl mx-auto space-y-6">
+        
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-purple-200 mb-2">CodeChef Leaderboard</h1>
+          <p className="text-purple-300">Batch: {batch} • Section: {section}</p>
+        </div>
+        
         {/* Nav bar */}
         <div className="flex justify-center gap-2 bg-slate-800/50 p-2 rounded-2xl backdrop-blur-sm">
           {[

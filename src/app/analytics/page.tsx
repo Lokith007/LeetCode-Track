@@ -7,8 +7,11 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { BarChart3, Trophy, Users, Target, TrendingUp, Calendar, Award, Activity, BarChart, PieChart, LineChart, Info, TrendingDown, Star, Zap } from "lucide-react"
+import { BarChart3, Trophy, Users, Target, TrendingUp, Calendar, Award, Activity, BarChart, PieChart, LineChart, Info, TrendingDown, Star, Zap, ArrowLeft } from "lucide-react"
 import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Home } from "lucide-react"
+import QuickNavButtons from "@/app/components/QuickNavButtons"
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -139,7 +142,12 @@ export default function AnalyticsDashboard() {
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-gray-900 p-8">
-        <div className="max-w-7xl mx-auto">
+        <div className="w-full max-w-7xl mx-auto">
+          {/* Quick Navigation - Top Left */}
+          <div className="mb-6 flex justify-start">
+            <QuickNavButtons />
+          </div>
+          
           {/* Header */}
           <div className="flex items-center gap-3 mb-8">
             <div className="bg-orange-400 rounded-lg p-2">
@@ -151,6 +159,29 @@ export default function AnalyticsDashboard() {
             <Badge variant="secondary" className="bg-orange-500 text-white">
               {totalBatches} Batches
             </Badge>
+          </div>
+
+          {/* Quick Navigation */}
+          <div className="flex gap-3 mb-6 justify-end">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.history.back()}
+              className="bg-[#1a1a1a] border-orange-300 text-orange-300 hover:bg-orange-900 hover:text-orange-200 transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back
+            </Button>
+            <Link href="/">
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-[#1a1a1a] border-orange-300 text-orange-300 hover:bg-orange-900 hover:text-orange-200 transition-colors"
+              >
+                <Home className="h-4 w-4 mr-2" />
+                Back to Home
+              </Button>
+            </Link>
           </div>
 
         {/* Overall Statistics with Tooltips */}

@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { BarChart3, Trophy, Users, Target, TrendingUp, Calendar, Award, Activity, BarChart, PieChart, LineChart } from "lucide-react"
+import QuickNavButtons from "@/app/components/QuickNavButtons"
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -45,6 +46,15 @@ const GET_BATCH_ANALYTICS = gql`
   }
 `
 
+const GET_BATCH_INFO = gql`
+  query GetBatchInfo {
+    allBatches {
+      name
+      secCount
+    }
+  }
+`
+
 
 
 export default function BatchAnalyticsPage() {
@@ -55,6 +65,12 @@ export default function BatchAnalyticsPage() {
     variables: { batch },
     skip: !batch
   })
+
+  const { data: batchInfoData } = useQuery(GET_BATCH_INFO);
+  
+  // Get the actual secCount for the current batch
+  const currentBatchInfo = batchInfoData?.allBatches?.find((b: any) => b.name === batch);
+  const secCount = currentBatchInfo?.secCount || 1;
 
 
 
@@ -113,7 +129,10 @@ export default function BatchAnalyticsPage() {
 
   return (
     <div className="min-h-screen bg-gray-900 p-8">
-      <div className="max-w-7xl mx-auto">
+      <div className="w-full max-w-7xl mx-auto">
+        {/* Quick Navigation - At the very top */}
+        <QuickNavButtons />
+
         {/* Header */}
         <div className="flex items-center gap-3 mb-8">
           <div className="bg-orange-400 rounded-lg p-2">

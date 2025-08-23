@@ -8,15 +8,16 @@ import {
   fetchTopByRatingGlobal,
 } from "./fetchBatchData";
 import { gsap } from "gsap";
+import QuickNavButtons from "@/app/components/QuickNavButtons";
 
 export default function BatchTables() {
   const client = useApolloClient();
-  const [topBySolved, setTopBySolved] = useState([]);
-  const [solvedGroups, setSolvedGroups] = useState([]);
-  const [contestStats, setContestStats] = useState([]);
-  const [topStudents, setTopStudents] = useState([]);
+  const [topBySolved, setTopBySolved] = useState<any[]>([]);
+  const [solvedGroups, setSolvedGroups] = useState<any[]>([]);
+  const [contestStats, setContestStats] = useState<any[]>([]);
+  const [topStudents, setTopStudents] = useState<any[]>([]);
 
-  const sectionRefs = useRef([]);
+  const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const batches =['AIDS-CITAR-III', 'AIDS-II', 'AIDS-III', 'AIML-II', 'AIML-III', 'CSBS-II', 'CSBS-III', 'CYBER-II', 'CYBER-III', 'batch23-27', 'batch24-28', 'citarIII'];
 
@@ -59,9 +60,14 @@ export default function BatchTables() {
 
   return (
     <div className="p-6 space-y-12 bg-gradient-to-br from-[#1f1f1f] via-[#242424] to-[#2a2a2a] min-h-screen text-gray-100">
+      {/* Quick Navigation - Top Left */}
+      <div className="mb-6 flex justify-start">
+        <QuickNavButtons />
+      </div>
+      
       {/* Table 1 */}
       <div
-        ref={(el) => (sectionRefs.current[0] = el)}
+        ref={(el) => { sectionRefs.current[0] = el; }}
         className={sectionClass}
       >
         <h2 className={headerClass}>🌍 Global Top 5 by Total Solved</h2>
@@ -99,7 +105,7 @@ export default function BatchTables() {
 
       {/* Table 2 */}
       <div
-        ref={(el) => (sectionRefs.current[1] = el)}
+        ref={(el) => { sectionRefs.current[1] = el; }}
         className={sectionClass}
       >
         <h2 className={headerClass}>📊 Solved Distribution per Batch</h2>
@@ -135,7 +141,7 @@ export default function BatchTables() {
 
       {/* Table 3 */}
       <div
-        ref={(el) => (sectionRefs.current[2] = el)}
+        ref={(el) => { sectionRefs.current[2] = el; }}
         className={sectionClass}
       >
         <h3 className={headerClass}>🏆 Top Performers - Current Contest</h3>
@@ -175,7 +181,7 @@ export default function BatchTables() {
 
       {/* Table 4 */}
       <div
-        ref={(el) => (sectionRefs.current[3] = el)}
+        ref={(el) => { sectionRefs.current[3] = el; }}
         className={sectionClass}
       >
         <h2 className={headerClass}>📈 Contest Participation per Batch</h2>
