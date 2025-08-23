@@ -484,17 +484,52 @@ const { attendedCount, notAttendedCount } = useMemo(() => {
         
 
 <div className="grid grid-cols-1 md:grid-cols-[1.5fr_repeat(9,1fr)] gap-12 items-center 
-           px-8 py-4 mb-6
-           bg-gradient-to-br from-[#1f1f1f] via-[#242424] to-[#2a2a2a] 
-           rounded-lg shadow-md border border-[#f59e0b40]">
+            px-8 py-4 mb-6
+            bg-gradient-to-br from-[#1f1f1f] via-[#242424] to-[#2a2a2a] 
+            rounded-lg shadow-md border border-[#f59e0b40]">
   <div className="cursor-pointer hover:text-[#fcd9b8] transition-colors">Name</div>
   <div className="cursor-pointer hover:text-[#fcd9b8] transition-colors">Section</div>
-  <div className="cursor-pointer hover:text-[#fcd9b8] transition-colors" onClick={() => toggleSort('latestScore')}>Latest Score</div>
-  <div className="cursor-pointer hover:text-[#fcd9b8] transition-colors" onClick={() => toggleSort('totalSolved')}>Total Solved</div>
-  <div className="cursor-pointer hover:text-[#fcd9b8] transition-colors" onClick={() => toggleSort('rating')}>Rating</div>
-  <div className="cursor-pointer hover:text-[#fcd9b8] transition-colors" onClick={() => toggleSort('predictRating')}>Predicted Rating</div>
+  <div className={`cursor-pointer hover:text-[#fcd9b8] transition-colors flex items-center gap-2 ${sortBy === 'latestScore' ? 'text-[#fcd9b8]' : ''}`} onClick={() => toggleSort('latestScore')}>
+    Latest Score
+    {sortBy === 'latestScore' && (
+      <span className="text-sm">
+        {sortOrder === 'asc' ? '↑' : '↓'}
+      </span>
+    )}
+  </div>
+  <div className={`cursor-pointer hover:text-[#fcd9b8] transition-colors flex items-center gap-2 ${sortBy === 'totalSolved' ? 'text-[#fcd9b8]' : ''}`} onClick={() => toggleSort('totalSolved')}>
+    Total Solved
+    {sortBy === 'totalSolved' && (
+      <span className="text-sm">
+        {sortOrder === 'asc' ? '↑' : '↓'}
+      </span>
+    )}
+  </div>
+  <div className={`cursor-pointer hover:text-[#fcd9b8] transition-colors flex items-center gap-2 ${sortBy === 'rating' ? 'text-[#fcd9b8]' : ''}`} onClick={() => toggleSort('rating')}>
+    Rating
+    {sortBy === 'rating' && (
+      <span className="text-sm">
+        {sortOrder === 'asc' ? '↑' : '↓'}
+      </span>
+    )}
+  </div>
+  <div className={`cursor-pointer hover:text-[#fcd9b8] transition-colors flex items-center gap-2 ${sortBy === 'predictRating' ? 'text-[#fcd9b8]' : ''}`} onClick={() => toggleSort('predictRating')}>
+    Predicted Rating
+    {sortBy === 'predictRating' && (
+      <span className="text-sm">
+        {sortOrder === 'asc' ? '↑' : '↓'}
+      </span>
+    )}
+  </div>
   <div className="cursor-pointer hover:text-[#fcd9b8] transition-colors">Code</div>
-  <div className="cursor-pointer hover:text-[#fcd9b8] transition-colors" onClick={() => toggleSort('currRank')}>Rank</div>
+  <div className={`cursor-pointer hover:text-[#fcd9b8] transition-colors flex items-center gap-2 ${sortBy === 'currRank' ? 'text-[#fcd9b8]' : ''}`} onClick={() => toggleSort('currRank')}>
+    Rank
+    {sortBy === 'currRank' && (
+      <span className="text-sm">
+        {sortOrder === 'asc' ? '↑' : '↓'}
+      </span>
+    )}
+  </div>
   <div className="cursor-pointer hover:text-[#fcd9b8] transition-colors">Last Contest</div>
   <div className="cursor-pointer hover:text-[#fcd9b8] transition-colors">Trend</div>
 </div>
