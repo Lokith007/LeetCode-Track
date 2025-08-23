@@ -92,8 +92,12 @@ export default function HomePage() {
              return acc;
            }, {}) || {};
 
-            // Sort departments alphabetically for consistent display order
-            const departmentOrder = Object.keys(departmentBatches).sort();
+            // Sort departments: CSE first, then others in any order
+            const departmentOrder = Object.keys(departmentBatches).sort((a, b) => {
+              if (a === 'CSE') return -1;  // CSE first
+              if (b === 'CSE') return 1;   // CSE first
+              return 0;  // Others in any order
+            });
 
             return departmentOrder.map((dept) => {
               const batches = departmentBatches[dept];
