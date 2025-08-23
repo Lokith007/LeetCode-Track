@@ -103,25 +103,13 @@ export default function HomePage() {
               const batches = departmentBatches[dept];
               if (!batches || batches.length === 0) return null;
             
-                // Sort the batches with improved priority order
+                // Sort the batches: shortest name first
                 const sortedBatches = batches.sort((a: Batch, b: Batch) => {
-                  const normalize = (name: string) => name.toUpperCase().replace(/[-\s]+/g, ""); 
-                  // e.g. "CITAR-III" → "CITARIII"
+                  const aLen = a.name.length;
+                  const bLen = b.name.length;
 
-                  const getPriority = (name: string) => {
-                    const clean = normalize(name);
-                    if (clean.endsWith("III")) return 2;  // III batches next (check this FIRST!)
-                    if (clean.endsWith("II")) return 1;   // II batches first
-                    return 3;                             // everything else
-                  };
-
-                  const aPriority = getPriority(a.name);
-                  const bPriority = getPriority(b.name);
-
-
-
-                  if (aPriority !== bPriority) return aPriority - bPriority;
-                  return normalize(a.name).localeCompare(normalize(b.name)); // tie-break
+                  if (aLen !== bLen) return aLen - bLen;
+                  return a.name.localeCompare(b.name); // tie-break alphabetically
                 });
                 
 
