@@ -102,23 +102,29 @@ export default function HomePage() {
             return departmentOrder.map((dept) => {
               const batches = departmentBatches[dept];
               if (!batches || batches.length === 0) return null;
-              
-                // Sort the batches with hardcoded priority order
+            
+                // Sort the batches with improved priority order
                 const sortedBatches = batches.sort((a: Batch, b: Batch) => {
-                  const aName = a.name;  // Use batch name directly
-                  const bName = b.name;  // Use batch name directly
-                  
-                  // Hardcoded priority order: II first, everything else in any order
+                  const normalize = (name: string) => name.toUpperCase().replace(/[-\s]+/g, ""); 
+                  // e.g. "CITAR-III" → "CITARIII"
+
                   const getPriority = (name: string) => {
-                    if (name.endsWith('II')) return 1;  // II batches first
-                    return 2;  // Everything else gets same priority (any order)
+                    const clean = normalize(name);
+                    if (clean.endsWith("III")) return 2;  // III batches next (check this FIRST!)
+                    if (clean.endsWith("II")) return 1;   // II batches first
+                    return 3;                             // everything else
                   };
-                  
-                  const aPriority = getPriority(aName);
-                  const bPriority = getPriority(bName);
-                  
-                  return aPriority - bPriority;
+
+                  const aPriority = getPriority(a.name);
+                  const bPriority = getPriority(b.name);
+
+
+
+                  if (aPriority !== bPriority) return aPriority - bPriority;
+                  return normalize(a.name).localeCompare(normalize(b.name)); // tie-break
                 });
+                
+
               
 
 
