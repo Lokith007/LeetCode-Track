@@ -124,7 +124,7 @@ export default function Leaderboard({ batch, section }: { batch: string; section
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (sortDropdownOpen && !(event.target as Element).closest('.group')) {
+      if (sortDropdownOpen && !(event.target as Element).closest('.relative')) {
         setSortDropdownOpen(false);
       }
     };
@@ -234,7 +234,19 @@ export default function Leaderboard({ batch, section }: { batch: string; section
   // Reset page when filters change
   useEffect(() => {
     setPageIndex(0);
+    // Scroll to top when filters change
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [section, searchQuery, sortBy, sortOrder]);
+
+  // Scroll to top when view changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentView]);
+
+  // Scroll to top when page changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [pageIndex]);
 
   // Get contest participants
   const getContestParticipants = () => {
@@ -434,17 +446,13 @@ export default function Leaderboard({ batch, section }: { batch: string; section
               {/* Sort by Dropdown */}
               <div className="flex items-center gap-1">
                 <span className="text-purple-200 text-xs font-medium">Sort by:</span>
-                <div 
-                  className="relative group"
-                  onMouseEnter={() => setSortDropdownOpen(true)}
-                  onMouseLeave={() => setSortDropdownOpen(false)}
-                >
+                <div className="relative">
                   <button 
                     className="px-2 py-2 rounded-md bg-[#1b1430] border border-purple-500/40 text-white text-xs hover:bg-[#2a1f4a] hover:border-purple-400/60 hover:shadow-md focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400/20 transition-all duration-200 min-w-[100px] flex items-center justify-between"
                     onClick={() => setSortDropdownOpen(!sortDropdownOpen)}
                   >
                     {sortBy === 'currentRating' ? 'Current Rating' : sortBy === 'maxRating' ? 'Max Rating' : 'Problems Solved'}
-                    <svg className="w-4 h-4 ml-2 transition-transform duration-200 group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className={`w-4 h-4 ml-2 transition-transform duration-200 ${sortDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                   </button>
