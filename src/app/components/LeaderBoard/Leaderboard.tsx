@@ -339,7 +339,7 @@ const { attendedCount, notAttendedCount } = useMemo(() => {
           {/* Top Row - Title and Attendance Cards */}
           <div className="mb-4 flex items-center justify-between">
             <h1 className="text-3xl font-bold text-[#fcd9b8] leading-tight tracking-wide px-4 py-2 inline-block">
-              Leaderboard — {getBatchDisplayName(batch)}
+              Leaderboard — {getBatchDisplayName(batch)}{section !== 'All' && section !== 'all' ? ` (${section})` : ''}
             </h1>
 
 
@@ -378,11 +378,11 @@ const { attendedCount, notAttendedCount } = useMemo(() => {
             <div className="flex items-center gap-3">
               {/* Enhanced Section Filter */}
               <div className="relative group">
-                <div 
-                  className="flex items-center gap-2 bg-[#0f0f0f] border border-[#f59e0b40] rounded-xl px-4 py-2 cursor-pointer hover:border-[#f59e0b60] transition-all duration-200 w-32"
-                  onMouseEnter={() => setIsDropdownOpen(true)}
-                  onMouseLeave={() => setIsDropdownOpen(false)}
-                >
+                                 <div 
+                   className="flex items-center gap-2 bg-[#0f0f0f] border border-[#f59e0b40] rounded-xl px-4 py-2 cursor-pointer hover:border-[#f59e0b60] transition-all duration-200 w-40"
+                   onMouseEnter={() => setIsDropdownOpen(true)}
+                   onMouseLeave={() => setIsDropdownOpen(false)}
+                 >
                   <span className="text-gray-300 text-sm font-medium truncate flex-1">
                     {filter === 'All' ? 'All Sections' : filter === 'SDE' ? 'SDE' : 'Non-SDE'}
                   </span>
@@ -484,17 +484,52 @@ const { attendedCount, notAttendedCount } = useMemo(() => {
         
 
 <div className="grid grid-cols-1 md:grid-cols-[1.5fr_repeat(9,1fr)] gap-12 items-center 
-           px-8 py-4 mb-6
-           bg-gradient-to-br from-[#1f1f1f] via-[#242424] to-[#2a2a2a] 
-           rounded-lg shadow-md border border-[#f59e0b40]">
+            px-8 py-4 mb-6
+            bg-gradient-to-br from-[#1f1f1f] via-[#242424] to-[#2a2a2a] 
+            rounded-lg shadow-md border border-[#f59e0b40]">
   <div className="cursor-pointer hover:text-[#fcd9b8] transition-colors">Name</div>
   <div className="cursor-pointer hover:text-[#fcd9b8] transition-colors">Section</div>
-  <div className="cursor-pointer hover:text-[#fcd9b8] transition-colors" onClick={() => toggleSort('latestScore')}>Latest Score</div>
-  <div className="cursor-pointer hover:text-[#fcd9b8] transition-colors" onClick={() => toggleSort('totalSolved')}>Total Solved</div>
-  <div className="cursor-pointer hover:text-[#fcd9b8] transition-colors" onClick={() => toggleSort('rating')}>Rating</div>
-  <div className="cursor-pointer hover:text-[#fcd9b8] transition-colors" onClick={() => toggleSort('predictRating')}>Predicted Rating</div>
+  <div className={`cursor-pointer hover:text-[#fcd9b8] transition-colors flex items-center gap-2 ${sortBy === 'latestScore' ? 'text-[#fcd9b8]' : ''}`} onClick={() => toggleSort('latestScore')}>
+    Latest Score
+    {sortBy === 'latestScore' && (
+      <span className="text-sm">
+        {sortOrder === 'asc' ? '↑' : '↓'}
+      </span>
+    )}
+  </div>
+  <div className={`cursor-pointer hover:text-[#fcd9b8] transition-colors flex items-center gap-2 ${sortBy === 'totalSolved' ? 'text-[#fcd9b8]' : ''}`} onClick={() => toggleSort('totalSolved')}>
+    Total Solved
+    {sortBy === 'totalSolved' && (
+      <span className="text-sm">
+        {sortOrder === 'asc' ? '↑' : '↓'}
+      </span>
+    )}
+  </div>
+  <div className={`cursor-pointer hover:text-[#fcd9b8] transition-colors flex items-center gap-2 ${sortBy === 'rating' ? 'text-[#fcd9b8]' : ''}`} onClick={() => toggleSort('rating')}>
+    Rating
+    {sortBy === 'rating' && (
+      <span className="text-sm">
+        {sortOrder === 'asc' ? '↑' : '↓'}
+      </span>
+    )}
+  </div>
+  <div className={`cursor-pointer hover:text-[#fcd9b8] transition-colors flex items-center gap-2 ${sortBy === 'predictRating' ? 'text-[#fcd9b8]' : ''}`} onClick={() => toggleSort('predictRating')}>
+    Predicted Rating
+    {sortBy === 'predictRating' && (
+      <span className="text-sm">
+        {sortOrder === 'asc' ? '↑' : '↓'}
+      </span>
+    )}
+  </div>
   <div className="cursor-pointer hover:text-[#fcd9b8] transition-colors">Code</div>
-  <div className="cursor-pointer hover:text-[#fcd9b8] transition-colors" onClick={() => toggleSort('currRank')}>Rank</div>
+  <div className={`cursor-pointer hover:text-[#fcd9b8] transition-colors flex items-center gap-2 ${sortBy === 'currRank' ? 'text-[#fcd9b8]' : ''}`} onClick={() => toggleSort('currRank')}>
+    Rank
+    {sortBy === 'currRank' && (
+      <span className="text-sm">
+        {sortOrder === 'asc' ? '↑' : '↓'}
+      </span>
+    )}
+  </div>
   <div className="cursor-pointer hover:text-[#fcd9b8] transition-colors">Last Contest</div>
   <div className="cursor-pointer hover:text-[#fcd9b8] transition-colors">Trend</div>
 </div>
@@ -647,7 +682,9 @@ const { attendedCount, notAttendedCount } = useMemo(() => {
         <button
               onClick={() => {
                 setPageIndex((p) => Math.max(0, p - 1));
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                setTimeout(() => {
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }, 100);
               }}
           disabled={pageIndex === 0}
               className="px-2 py-1 border border-[#f59e0b40] rounded text-gray-200 hover:bg-[#f59e0b20] hover:border-[#f59e0b60] disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:border-[#f59e0b40] transition-all duration-200 flex items-center gap-1 text-xs"
@@ -686,7 +723,7 @@ const { attendedCount, notAttendedCount } = useMemo(() => {
                   key={p}
                       onClick={() => {
                         setPageIndex(p as number);
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        document.body.scrollIntoView({ behavior: 'smooth' });
                       }}
                       className={`px-2 py-1 border rounded transition-all duration-200 min-w-[2rem] text-xs ${
                         pageIndex === p 
@@ -706,7 +743,7 @@ const { attendedCount, notAttendedCount } = useMemo(() => {
                 const newPage = pageIndex + 1;
                 if (newPage < Math.ceil(filteredStudents.length / PAGE_LIMIT)) {
                   setPageIndex(newPage);
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                  document.body.scrollIntoView({ behavior: 'smooth' });
                 }
               }}
           disabled={pageIndex + 1 >= Math.ceil(filteredStudents.length / PAGE_LIMIT)}

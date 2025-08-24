@@ -6,6 +6,7 @@ import { use } from "react";
 import { useRouter } from "next/navigation";
 import QuickNavButtons from "../../../components/QuickNavButtons";
 import { useQuery, gql } from "@apollo/client";
+import { classifyBatchIntoDepartment } from "@/lib/utils";
 
 const GET_BATCH_INFO = gql`
   query GetBatchInfo {
@@ -30,23 +31,20 @@ const LeetCodeSections = ({
   const currentBatchInfo = batchData?.allBatches?.find((b: any) => b.name === batch);
   const secCount = currentBatchInfo?.secCount || 1;
 
-  // Get the department name from the batch
-  const getDepartmentName = (batchName: string) => {
-    if (batchName.startsWith('batch')) return 'CSE';
-    if (batchName.startsWith('AIML')) return 'AIML';
-    if (batchName.startsWith('AIDS')) return 'AIDS';
-    if (batchName.startsWith('CYBER')) return 'CYBER';
-    if (batchName.startsWith('CSBS')) return 'CSBS';
-    if (batchName.startsWith('citar')) return 'CSE-CITAR';
-    return batchName;
-  };
-
-  const departmentName = getDepartmentName(batch);
+     // Get the department name from the batch using shared function
+   const departmentName = classifyBatchIntoDepartment(batch);
   
-  const sections = Array.from({ length: secCount }, (_, i) => ({
-    name: `${departmentName}-${String.fromCharCode(65 + i)}`,
-  }));
-  console.log("Actual secCount:", secCount, "Sections:", sections);
+     // Generate sections with proper naming
+   const sections = Array.from({ length: secCount }, (_, i) => {
+     const sectionLetter = String.fromCharCode(65 + i);
+     
+           // Special handling for different department types
+      if (batch.startsWith('CYBER')) {
+        return { name: `CS-${sectionLetter}` };  // CS-A, CS-B, CS-C, etc.
+      } else {
+        return { name: `${departmentName}-${sectionLetter}` }; // CSE-A, CSE-B, AIDS-A, AIDS-B, etc.
+      }
+      });
 
   const handleSectionClick = (sectionName?: string) => {
     const formatted = sectionName || "all";
@@ -71,9 +69,9 @@ const LeetCodeSections = ({
       <div className="w-full max-w-7xl mx-auto">
         <div className="flex items-center justify-center mb-2">
           <div className="flex flex-col items-center">
-            <h2 className="text-3xl font-bold tracking-tight text-orange-400">
-              {departmentName} Sections
-            </h2>
+             <h2 className="text-3xl font-bold tracking-tight text-orange-400">
+               {batch.startsWith('CYBER') ? 'CS' : departmentName} Sections
+             </h2>
             <p className="text-sm text-gray-400">
               Click on a section to explore its leaderboard
             </p>

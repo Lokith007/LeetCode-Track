@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button"
 import { User, BarChart3 } from "lucide-react"
 import Link from "next/link"
 import { gql, useQuery } from "@apollo/client"
-import { getBatchDisplayName, getBatchPriority } from "./data/data"
+import { getBatchDisplayName } from "./data/data"
+import QuickNavButtons from "./components/QuickNavButtons"
+import { classifyBatchIntoDepartment } from "@/lib/utils"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 
@@ -59,35 +61,10 @@ export default function HomePage() {
   if (errorAll) return <p>Error: {errorAll.message}</p>
   if (errorAdmin) return <p>Error: {errorAdmin.message}</p>
 
-  // filter: only keep batches present in both queries
+  // filter: only keep batches assigned to this admin
   const adminBatchNames: string[] = adminBatchesData?.getAdminBatches || []
   const allBatches: Batch[] = allBatchesData?.allBatches || []
-  console.log(allBatches);
-  
-
-  const filteredBatches = allBatches.filter((batch) =>
-    adminBatchNames.includes(batch.name)
-  )
-
-  // helper to render a department grid
-  const renderDepartment = (title: string, names: string[]) => (
-    <div className="space-y-4">
-      <h2 className="text-2xl font-bold text-orange-400">{title}</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        {filteredBatches
-          .filter((batch) => names.includes(batch.name))
-          .sort((a, b) => getBatchPriority(a.name) - getBatchPriority(b.name))
-          .map((batch) => (
-            <BatchCard
-              key={batch.name}
-              batch={batch.name}
-              displayName={getBatchDisplayName(batch.name)}
-              secCount={batch.secCount}
-            />
-          ))}
-      </div>
-    </div>
-  )
+  const filteredBatches = allBatches.filter((batch) => adminBatchNames.includes(batch.name))
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-start bg-[#121212] text-orange-400 py-12 px-4 font-sans">
@@ -123,21 +100,62 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Add Batch Card */}
-      {(email === 'pavithras@citchennai.net' )&&
-      <div className="w-full max-w-6xl mb-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          <AddBatchCard />
+      {/* Add Batch Card (for super admin only) */}
+      {email === "pavithras@citchennai.net" && (
+        <div className="w-full max-w-6xl mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            <AddBatchCard />
+          </div>
         </div>
-      </div>
-}
-      {/* All Batches Grid (Filtered by Admin) */}
+      )}
+
+      {/* All Batches Grid - Dynamically Generated */}
       <div className="w-full max-w-6xl space-y-8">
-        {renderDepartment("CSE", ["batch24-28", "batch23-27", "citarIII"])}
-        {renderDepartment("AIML", ["AIML-II", "AIML-III"])}
-        {renderDepartment("AIDS", ["AIDS-II", "AIDS-III" , "AIDS-CITAR-III"])}
-        {renderDepartment("CYBER", ["CYBER-II", "CYBER-III"])}
-        {renderDepartment("CSBS", ["CSBS-II", "CSBS-III"])}
+        {(() => {
+          // Dynamically classify only the filtered batches
+          const departmentBatches =
+            filteredBatches.reduce((acc: Record<string, Batch[]>, batch: Batch) => {
+              const dept = classifyBatchIntoDepartment(batch.name)
+              if (!acc[dept]) acc[dept] = []
+              acc[dept].push(batch)
+              return acc
+            }, {}) || {}
+
+          // Sort departments: CSE first
+          const departmentOrder = Object.keys(departmentBatches).sort((a, b) => {
+            if (a === "CSE") return -1
+            if (b === "CSE") return 1
+            return 0
+          })
+
+          return departmentOrder.map((dept) => {
+            const batches = departmentBatches[dept]
+            if (!batches || batches.length === 0) return null
+
+            const sortedBatches = batches.sort((a: Batch, b: Batch) => {
+              const aDisplay = getBatchDisplayName(a.name)
+              const bDisplay = getBatchDisplayName(b.name)
+              if (aDisplay.length !== bDisplay.length) return aDisplay.length - bDisplay.length
+              return aDisplay.localeCompare(bDisplay)
+            })
+
+            return (
+              <div key={dept} className="space-y-4">
+                <h2 className="text-2xl font-bold text-orange-400">{dept}</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                  {sortedBatches.map((batch: Batch) => (
+                    <BatchCard
+                      key={batch.name}
+                      batch={batch.name}
+                      displayName={getBatchDisplayName(batch.name)}
+                      secCount={batch.secCount}
+                    />
+                  ))}
+                </div>
+              </div>
+            )
+          })
+        })()}
       </div>
 
       <a
