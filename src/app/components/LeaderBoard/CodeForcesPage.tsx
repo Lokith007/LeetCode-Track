@@ -29,18 +29,16 @@ const GET_STUDENTS = gql`
           friendOfCount
           handle
           maxRating
-          problemStats {
-            difficultyBreakdown {
-              easySolved
-              hardSolved
-              legendarySolved
-              mediumSolved
-              totalSolved
-              veryHardSolved
-            }
-          }
           rank
           ratingChange
+          problemStats {
+            total
+            easy
+            medium
+            hard
+            veryHard
+            legendary
+          }
           recentContests {
             attended
             contestId
@@ -54,6 +52,8 @@ const GET_STUDENTS = gql`
               rank
               ratingChange
               wasEligible
+              totalProblems
+              solvedCount
             }
           }
           titlePhoto
@@ -71,13 +71,10 @@ export default function Leaderboard({ batch, section }: { batch: string; section
 
   const students = data?.students || [];
   
-  // Debug logging
-  console.log('🔍 Debug Info:');
-  console.log('Batch:', batch);
-  console.log('Section:', section);
-  console.log('Students count:', students.length);
-  console.log('Students data:', students);
-  console.log('Loading state:', loading);
+  // Debug logging to see what data we're getting
+  console.log('🔍 Debug - Students data:', students);
+  console.log('🔍 Debug - First student codeforces data:', students[0]?.codeforces);
+  console.log('🔍 Debug - First student problemStats:', students[0]?.codeforces?.problemStats);
 
   // View state
   const [currentView, setCurrentView] = useState<'dashboard' | 'contest'>('dashboard');
@@ -127,7 +124,7 @@ export default function Leaderboard({ batch, section }: { batch: string; section
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (sortDropdownOpen && !(event.target as Element).closest('.group')) {
+      if (sortDropdownOpen && !(event.target as Element).closest('.relative')) {
         setSortDropdownOpen(false);
       }
     };
@@ -175,8 +172,8 @@ export default function Leaderboard({ batch, section }: { batch: string; section
           bValue = b.codeforces?.maxRating ?? 0;
           break;
         case 'problemsSolved':
-          aValue = a.codeforces?.problemStats?.difficultyBreakdown?.totalSolved ?? 0;
-          bValue = b.codeforces?.problemStats?.difficultyBreakdown?.totalSolved ?? 0;
+          aValue = a.codeforces?.problemStats?.total ?? 0;
+          bValue = b.codeforces?.problemStats?.total ?? 0;
           break;
         case 'newRating':
           // For contest view, use newRating from the selected contest
@@ -237,7 +234,19 @@ export default function Leaderboard({ batch, section }: { batch: string; section
   // Reset page when filters change
   useEffect(() => {
     setPageIndex(0);
+    // Scroll to top when filters change
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [section, searchQuery, sortBy, sortOrder]);
+
+  // Scroll to top when view changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentView]);
+
+  // Scroll to top when page changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [pageIndex]);
 
   // Get contest participants
   const getContestParticipants = () => {
@@ -437,17 +446,13 @@ export default function Leaderboard({ batch, section }: { batch: string; section
               {/* Sort by Dropdown */}
               <div className="flex items-center gap-1">
                 <span className="text-purple-200 text-xs font-medium">Sort by:</span>
-                <div 
-                  className="relative group"
-                  onMouseEnter={() => setSortDropdownOpen(true)}
-                  onMouseLeave={() => setSortDropdownOpen(false)}
-                >
+                <div className="relative">
                   <button 
                     className="px-2 py-2 rounded-md bg-[#1b1430] border border-purple-500/40 text-white text-xs hover:bg-[#2a1f4a] hover:border-purple-400/60 hover:shadow-md focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400/20 transition-all duration-200 min-w-[100px] flex items-center justify-between"
                     onClick={() => setSortDropdownOpen(!sortDropdownOpen)}
                   >
                     {sortBy === 'currentRating' ? 'Current Rating' : sortBy === 'maxRating' ? 'Max Rating' : 'Problems Solved'}
-                    <svg className="w-4 h-4 ml-2 transition-transform duration-200 group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className={`w-4 h-4 ml-2 transition-transform duration-200 ${sortDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                   </button>
@@ -620,7 +625,7 @@ export default function Leaderboard({ batch, section }: { batch: string; section
                     {/* Total Problems */}
                     <div className="text-center group cursor-pointer">
                       <div className="text-blue-300 text-lg font-medium group-hover:text-blue-200 transition-colors duration-200">
-                        {student.codeforces?.problemStats?.difficultyBreakdown?.totalSolved || 0}
+                        {student.codeforces?.problemStats?.total || 0}
                       </div>
                       <div className="text-purple-200 text-xs mt-1 group-hover:text-purple-100 transition-colors duration-200">Total</div>
                     </div>
@@ -628,7 +633,7 @@ export default function Leaderboard({ batch, section }: { batch: string; section
                     {/* Easy Problems */}
                     <div className="text-center group cursor-pointer">
                       <div className="text-green-400 text-lg font-medium group-hover:text-green-300 transition-colors duration-200">
-                        {student.codeforces?.problemStats?.difficultyBreakdown?.easySolved || 0}
+                        {student.codeforces?.problemStats?.easy || 0}
                       </div>
                       <div className="text-purple-200 text-xs mt-1 group-hover:text-purple-100 transition-colors duration-200">Easy</div>
                     </div>
@@ -636,7 +641,7 @@ export default function Leaderboard({ batch, section }: { batch: string; section
                     {/* Medium Problems */}
                     <div className="text-center group cursor-pointer">
                       <div className="text-yellow-400 text-lg font-medium group-hover:text-yellow-300 transition-colors duration-200">
-                        {student.codeforces?.problemStats?.difficultyBreakdown?.mediumSolved || 0}
+                        {student.codeforces?.problemStats?.medium || 0}
                       </div>
                       <div className="text-purple-200 text-xs mt-1 group-hover:text-purple-100 transition-colors duration-200">Med</div>
                     </div>
@@ -644,7 +649,7 @@ export default function Leaderboard({ batch, section }: { batch: string; section
                     {/* Hard Problems */}
                     <div className="text-center group cursor-pointer">
                       <div className="text-red-400 text-lg font-medium group-hover:text-red-300 transition-colors duration-200">
-                        {student.codeforces?.problemStats?.difficultyBreakdown?.hardSolved || 0}
+                        {student.codeforces?.problemStats?.hard || 0}
                       </div>
                       <div className="text-purple-200 text-xs mt-1 group-hover:text-purple-100 transition-colors duration-200">Hard</div>
                     </div>
@@ -652,7 +657,7 @@ export default function Leaderboard({ batch, section }: { batch: string; section
                     {/* Very Hard Problems */}
                     <div className="text-center group cursor-pointer">
                       <div className="text-red-500 text-lg font-medium group-hover:text-red-400 transition-colors duration-200">
-                        {student.codeforces?.problemStats?.difficultyBreakdown?.veryHardSolved || 0}
+                        {student.codeforces?.problemStats?.veryHard || 0}
                       </div>
                       <div className="text-purple-200 text-xs mt-1 group-hover:text-purple-100 transition-colors duration-200">Very Hard</div>
                     </div>
@@ -660,7 +665,7 @@ export default function Leaderboard({ batch, section }: { batch: string; section
                     {/* Legendary Problems */}
                     <div className="text-center group cursor-pointer">
                       <div className="text-purple-400 text-lg font-medium group-hover:text-purple-300 transition-colors duration-200">
-                        {student.codeforces?.problemStats?.difficultyBreakdown?.legendarySolved || 0}
+                        {student.codeforces?.problemStats?.legendary || 0}
                       </div>
                       <div className="text-purple-200 text-xs mt-1 group-hover:text-purple-100 transition-colors duration-200">Legend</div>
                     </div>
@@ -960,8 +965,7 @@ export default function Leaderboard({ batch, section }: { batch: string; section
                         {/* Total Problems */}
                         <div className="text-center group cursor-pointer">
                           <div className="text-blue-400 text-base font-medium group-hover:text-blue-300 transition-colors duration-200">
-                            {/* {student.contestData?.userPerformance?.totalProblems || 0} */}
-                            --
+                            {student.contestData?.userPerformance?.totalProblems || 0}
                           </div>
                           <div className="text-purple-200 text-xs mt-1 group-hover:text-purple-100 transition-colors duration-200">Total Problems</div>
                         </div>
@@ -969,8 +973,7 @@ export default function Leaderboard({ batch, section }: { batch: string; section
                         {/* Problems Solved */}
                         <div className="text-center group cursor-pointer">
                           <div className="text-blue-400 text-base font-medium group-hover:text-blue-300 transition-colors duration-200">
-                            {/* {student.contestData?.userPerformance?.solvedCount || 0} */}
-                            --
+                            {student.contestData?.userPerformance?.solvedCount || 0}
                           </div>
                           <div className="text-purple-200 text-xs mt-1 group-hover:text-purple-100 transition-colors duration-200 whitespace-nowrap">Problems Solved</div>
                         </div>
