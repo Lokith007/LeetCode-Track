@@ -2,6 +2,7 @@
 
 import { gql, useQuery } from '@apollo/client';
 import { useEffect, useMemo, useState } from 'react';
+import QuickNavButtons from '../QuickNavButtons';
 
 const GET_PAGINATED_STUDENTS = gql`
   query PaginatedStudents($batch: String!, $section: String, $limit: Int, $cursor: String) {
@@ -212,6 +213,9 @@ export default function Leaderboard({ batch, section }: LeaderboardProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white px-6 py-10">
       <div className="w-full max-w-7xl mx-auto space-y-6">
+        
+        {/* Quick Navigation */}
+        <QuickNavButtons currentBatch={batch} currentSection={section} />
         
         {/* Header */}
         <div className="text-center mb-8">
