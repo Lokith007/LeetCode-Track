@@ -19,7 +19,7 @@ export default function BatchTables() {
 
   const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  const batches =['AIDS-CITAR-III', 'AIDS-II', 'AIDS-III', 'AIML-II', 'AIML-III', 'CSBS-II', 'CSBS-III', 'CYBER-II', 'CYBER-III', 'batch23-27', 'batch24-28', 'citarIII'];
+  const batches = ['AIDS-CITAR-III', 'AIDS-II', 'AIDS-III', 'AIML-II', 'AIML-III', 'CSBS-II', 'CSBS-III', 'CYBER-II', 'CYBER-III', 'batch23-27', 'batch24-28', 'citarIII'];
 
   useEffect(() => {
     (async () => {
@@ -64,7 +64,7 @@ export default function BatchTables() {
       <div className="mb-6 flex justify-start">
         <QuickNavButtons />
       </div>
-      
+
       {/* Table 1 */}
       <div
         ref={(el) => { sectionRefs.current[0] = el; }}

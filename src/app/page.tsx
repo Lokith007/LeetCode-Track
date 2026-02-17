@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { User, BarChart3 } from "lucide-react"
 import Link from "next/link"
 import { gql, useQuery } from "@apollo/client"
-import { getBatchDisplayName } from "./data/data"
+import { getBatchDisplayName, getBatchPriority } from "./data/data"
 import QuickNavButtons from "./components/QuickNavButtons"
 import { classifyBatchIntoDepartment } from "@/lib/utils"
 import { useEffect, useState } from "react"
@@ -64,7 +64,11 @@ export default function HomePage() {
   // filter: only keep batches assigned to this admin
   const adminBatchNames: string[] = adminBatchesData?.getAdminBatches || []
   const allBatches: Batch[] = allBatchesData?.allBatches || []
-  const filteredBatches = allBatches.filter((batch) => adminBatchNames.includes(batch.name))
+
+  // Super admin gets to see everything
+  const filteredBatches = email === "pavithras@citchennai.net"
+    ? allBatches
+    : allBatches.filter((batch) => adminBatchNames.includes(batch.name))
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-start bg-[#121212] text-orange-400 py-12 px-4 font-sans">
@@ -133,6 +137,10 @@ export default function HomePage() {
             if (!batches || batches.length === 0) return null
 
             const sortedBatches = batches.sort((a: Batch, b: Batch) => {
+              const aPriority = getBatchPriority(a.name)
+              const bPriority = getBatchPriority(b.name)
+              if (aPriority !== bPriority) return aPriority - bPriority
+
               const aDisplay = getBatchDisplayName(a.name)
               const bDisplay = getBatchDisplayName(b.name)
               if (aDisplay.length !== bDisplay.length) return aDisplay.length - bDisplay.length

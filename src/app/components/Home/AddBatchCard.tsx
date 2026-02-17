@@ -47,10 +47,10 @@ export default function AddBatchCard() {
 
   return (
     <>
-                                                                                                                                                                                                                               <Card
-            onClick={() => setOpen(true)}
-            className="cursor-pointer transition-all duration-300 p-4 bg-[#1e1e1e] border-2 border-dashed border-orange-300 shadow-md rounded-2xl hover:shadow-lg hover:scale-105 hover:border-orange-300 hover:ring-2 hover:ring-orange-200 group h-32 w-full"
-          >
+      <Card
+        onClick={() => setOpen(true)}
+        className="cursor-pointer transition-all duration-300 p-4 bg-[#1e1e1e] border-2 border-dashed border-orange-300 shadow-md rounded-2xl hover:shadow-lg hover:scale-105 hover:border-orange-300 hover:ring-2 hover:ring-orange-200 group h-32 w-full"
+      >
         <CardContent className="relative">
           <div className="flex items-start justify-between mb-3">
             <div className="bg-orange-400 rounded-lg p-2 shadow-sm group-hover:scale-110 transition-transform duration-300">

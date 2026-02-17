@@ -70,7 +70,7 @@ export default function Leaderboard({ batch, section }: { batch: string; section
   });
 
   const students = data?.students || [];
-  
+
   // Debug logging
   console.log('🔍 Debug Info:');
   console.log('Batch:', batch);
@@ -106,21 +106,21 @@ export default function Leaderboard({ batch, section }: { batch: string; section
   const getAllContests = () => {
     // Get contests from any student (they all have the same recentContests data)
     const studentWithContests = students.find((s: any) => s.codeforces?.recentContests?.length > 0);
-    
+
     if (!studentWithContests?.codeforces?.recentContests) {
       return [];
     }
-    
+
     // Get past 5 contests (already sorted by start time, newest first)
     const allContests = studentWithContests.codeforces.recentContests
       .slice(0, 5);
-    
+
     return allContests;
   };
 
   const allContests = getAllContests();
   const [selectedContestId, setSelectedContestId] = useState<number | null>(allContests[0]?.contestId || null);
-  
+
   // Get selected contest data
   const selectedContest = allContests.find((c: any) => c.contestId === selectedContestId) || allContests[0];
 
@@ -161,10 +161,10 @@ export default function Leaderboard({ batch, section }: { batch: string; section
   // Sort students based on selected criteria
   const sortedStudents = useMemo(() => {
     let sorted = [...sectionFiltered];
-    
+
     sorted.sort((a, b) => {
       let aValue: number, bValue: number;
-      
+
       switch (sortBy) {
         case 'currentRating':
           aValue = a.codeforces?.currentRating ?? 0;
@@ -218,10 +218,10 @@ export default function Leaderboard({ batch, section }: { batch: string; section
           aValue = a.codeforces?.currentRating ?? 0;
           bValue = b.codeforces?.currentRating ?? 0;
       }
-      
+
       return sortOrder === 'desc' ? bValue - aValue : aValue - bValue;
     });
-    
+
     return sorted;
   }, [sectionFiltered, sortBy, sortOrder, currentView, selectedContest]);
 
@@ -242,10 +242,10 @@ export default function Leaderboard({ batch, section }: { batch: string; section
   // Get contest participants
   const getContestParticipants = () => {
     if (!selectedContest) return [];
-    
+
     return students
       .map((s: any) => {
-        const contest = s.codeforces?.recentContests?.find((c: any) => 
+        const contest = s.codeforces?.recentContests?.find((c: any) =>
           c.contestId === selectedContest.contestId
         );
         return {
@@ -276,10 +276,10 @@ export default function Leaderboard({ batch, section }: { batch: string; section
   // Count attended and not attended students for the selected contest
   const getAttendanceCounts = () => {
     if (!selectedContest) return { attended: 0, notAttended: 0 };
-    
+
     const allStudentsInContest = students
       .map((s: any) => {
-        const contest = s.codeforces?.recentContests?.find((c: any) => 
+        const contest = s.codeforces?.recentContests?.find((c: any) =>
           c.contestId === selectedContest.contestId
         );
         return {
@@ -291,7 +291,7 @@ export default function Leaderboard({ batch, section }: { batch: string; section
 
     const attended = allStudentsInContest.filter((s: any) => s.contestData?.attended === true).length;
     const notAttended = allStudentsInContest.filter((s: any) => s.contestData?.attended === false).length;
-    
+
     return { attended, notAttended };
   };
 
@@ -302,7 +302,7 @@ export default function Leaderboard({ batch, section }: { batch: string; section
     if (!searchQuery.trim()) {
       return contestParticipants;
     }
-    
+
     const query = searchQuery.trim().toLowerCase();
     return contestParticipants.filter((student: any) => {
       return (
@@ -334,7 +334,7 @@ export default function Leaderboard({ batch, section }: { batch: string; section
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
           </button>
-          
+
           <button
             onClick={() => router.push('/')}
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#1b1430] border border-orange-500/60 text-orange-400 text-sm hover:bg-orange-600/20 hover:border-orange-400 transition-all duration-200"
@@ -344,7 +344,7 @@ export default function Leaderboard({ batch, section }: { batch: string; section
             </svg>
             Back to Home
           </button>
-          
+
           <button
             onClick={() => router.push(`/sections/${batch}`)}
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#1b1430] border border-orange-500/60 text-orange-400 text-sm hover:bg-orange-600/20 hover:border-orange-400 transition-all duration-200"
@@ -394,7 +394,7 @@ export default function Leaderboard({ batch, section }: { batch: string; section
               </h1>
             </div>
           )}
-          
+
           <p className="text-left text-purple-200 text-lg">
             {getBatchDisplayName(batch)} • {section === 'all' ? 'All Sections' : section}
           </p>
@@ -407,18 +407,18 @@ export default function Leaderboard({ batch, section }: { batch: string; section
             <div className="flex items-center justify-center gap-3 mb-3">
               {/* View Toggle Buttons */}
               <div className="bg-[#1b1430] rounded-lg p-1 border border-purple-600/30">
-                                  <button
-                    onClick={() => setCurrentView('dashboard')}
-                    className="px-3 py-2 rounded-md font-medium transition-all duration-200 text-xs bg-purple-600 text-white shadow-lg hover:bg-purple-700 hover:shadow-xl"
-                  >
-                    📊 Dashboard
-                  </button>
-                  <button
-                    onClick={() => setCurrentView('contest')}
-                    className="px-3 py-2 rounded-md font-medium transition-all duration-200 text-xs text-purple-300 hover:text-purple-200 hover:bg-purple-600/20 hover:shadow-md"
-                  >
-                    🏆 Contest
-                  </button>
+                <button
+                  onClick={() => setCurrentView('dashboard')}
+                  className="px-3 py-2 rounded-md font-medium transition-all duration-200 text-xs bg-purple-600 text-white shadow-lg hover:bg-purple-700 hover:shadow-xl"
+                >
+                  📊 Dashboard
+                </button>
+                <button
+                  onClick={() => setCurrentView('contest')}
+                  className="px-3 py-2 rounded-md font-medium transition-all duration-200 text-xs text-purple-300 hover:text-purple-200 hover:bg-purple-600/20 hover:shadow-md"
+                >
+                  🏆 Contest
+                </button>
               </div>
               {/* Search Bar */}
               <div className="relative">
@@ -437,12 +437,12 @@ export default function Leaderboard({ batch, section }: { batch: string; section
               {/* Sort by Dropdown */}
               <div className="flex items-center gap-1">
                 <span className="text-purple-200 text-xs font-medium">Sort by:</span>
-                <div 
+                <div
                   className="relative group"
                   onMouseEnter={() => setSortDropdownOpen(true)}
                   onMouseLeave={() => setSortDropdownOpen(false)}
                 >
-                  <button 
+                  <button
                     className="px-2 py-2 rounded-md bg-[#1b1430] border border-purple-500/40 text-white text-xs hover:bg-[#2a1f4a] hover:border-purple-400/60 hover:shadow-md focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400/20 transition-all duration-200 min-w-[100px] flex items-center justify-between"
                     onClick={() => setSortDropdownOpen(!sortDropdownOpen)}
                   >
@@ -451,10 +451,10 @@ export default function Leaderboard({ batch, section }: { batch: string; section
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                   </button>
-                  
+
                   {sortDropdownOpen && (
                     <div className="absolute top-full left-0 mt-1 w-full bg-[#1b1430] border border-purple-500/40 rounded-md shadow-lg z-10">
-                      <div 
+                      <div
                         className="px-2 py-1 text-white text-xs hover:bg-purple-600/20 cursor-pointer transition-colors"
                         onClick={() => {
                           setSortBy('currentRating');
@@ -464,7 +464,7 @@ export default function Leaderboard({ batch, section }: { batch: string; section
                       >
                         Current Rating
                       </div>
-                      <div 
+                      <div
                         className="px-2 py-1 text-white text-xs hover:bg-purple-600/20 cursor-pointer transition-colors"
                         onClick={() => {
                           setSortBy('maxRating');
@@ -474,7 +474,7 @@ export default function Leaderboard({ batch, section }: { batch: string; section
                       >
                         Max Rating
                       </div>
-                      <div 
+                      <div
                         className="px-2 py-1 text-white text-xs hover:bg-purple-600/20 cursor-pointer transition-colors"
                         onClick={() => {
                           setSortBy('problemsSolved');
@@ -489,7 +489,7 @@ export default function Leaderboard({ batch, section }: { batch: string; section
                   )}
                 </div>
               </div>
-              
+
               {/* Order Button */}
               <div className="flex items-center gap-1">
                 <span className="text-purple-200 text-xs font-medium">Order:</span>
@@ -516,7 +516,7 @@ export default function Leaderboard({ batch, section }: { batch: string; section
                 Reset
               </button>
             </div>
-        
+
             {/* Header Row */}
             <div className="hidden md:grid md:grid-cols-[2fr_1.2fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr] gap-4 items-center 
               px-6 py-4 mb-4
@@ -565,7 +565,7 @@ export default function Leaderboard({ batch, section }: { batch: string; section
             {searchQuery.trim() && (
               <div className="text-center mb-4">
                 <p className="text-purple-200 text-sm">
-                  Found <span className="font-semibold text-purple-300">{sectionFiltered.length}</span> student{sectionFiltered.length !== 1 ? 's' : ''} 
+                  Found <span className="font-semibold text-purple-300">{sectionFiltered.length}</span> student{sectionFiltered.length !== 1 ? 's' : ''}
                   {sectionFiltered.length !== students.length && (
                     <span> out of <span className="font-semibold text-purple-300">{students.length}</span> total</span>
                   )}
@@ -581,7 +581,7 @@ export default function Leaderboard({ batch, section }: { batch: string; section
                     px-10 py-2
                     bg-gradient-to-br from-[#1b1430] via-[#1b1430] to-[#1b1430] 
                     rounded-lg shadow-md border border-purple-600/30 hover:border-purple-400/50 hover:shadow-lg hover:shadow-purple-500/10 transition-all duration-300 hover:scale-[1.01] hover:bg-gradient-to-br hover:from-[#2a1f4a] hover:via-[#2a1f4a] hover:to-[#2a1f4a]">
-                    
+
                     {/* Name and Icon */}
                     <div className="flex items-center gap-3 group cursor-pointer">
                       <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white group-hover:from-purple-400 group-hover:to-pink-400 transition-all duration-200">
@@ -664,18 +664,18 @@ export default function Leaderboard({ batch, section }: { batch: string; section
                       </div>
                       <div className="text-purple-200 text-xs mt-1 group-hover:text-purple-100 transition-colors duration-200">Legend</div>
                     </div>
-                    
+
                     {/* Empty column to match contest layout */}
                     <div className="text-center"></div>
                   </div>
                 ))}
-          </div>
-        ) : (
-          <div className="text-center py-12">
+              </div>
+            ) : (
+              <div className="text-center py-12">
                 <div className="text-purple-300 text-lg">No Students Found</div>
                 <div className="text-purple-400 text-sm mt-2">Try adjusting your search or filters</div>
-          </div>
-        )}
+              </div>
+            )}
 
             {/* Pagination */}
             {totalPages > 1 && (
@@ -687,7 +687,7 @@ export default function Leaderboard({ batch, section }: { batch: string; section
                 >
                   Previous
                 </button>
-                
+
                 <div className="flex items-center gap-1">
                   {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                     let pageNum;
@@ -700,24 +700,23 @@ export default function Leaderboard({ batch, section }: { batch: string; section
                     } else {
                       pageNum = pageIndex - 1 + i;
                     }
-                    
+
                     if (pageNum < 1 || pageNum > totalPages) return null;
-                    
+
                     return (
                       <button
                         key={pageNum}
                         onClick={() => setPageIndex(pageNum - 1)}
-                        className={`w-10 h-10 rounded-lg text-sm font-medium transition-colors ${
-                          pageNum === pageIndex + 1
+                        className={`w-10 h-10 rounded-lg text-sm font-medium transition-colors ${pageNum === pageIndex + 1
                             ? 'bg-purple-600 text-white'
                             : 'bg-[#1b1430] border border-purple-600/30 text-purple-300 hover:bg-purple-600/20 hover:border-purple-400/50'
-                        }`}
+                          }`}
                       >
                         {pageNum}
                       </button>
                     );
                   })}
-                  
+
                   {totalPages > 5 && pageIndex < totalPages - 3 && (
                     <>
                       {pageIndex < totalPages - 4 && <span className="text-purple-400">...</span>}
@@ -730,7 +729,7 @@ export default function Leaderboard({ batch, section }: { batch: string; section
                     </>
                   )}
                 </div>
-                
+
                 <button
                   onClick={() => setPageIndex(Math.min(totalPages - 1, pageIndex + 1))}
                   disabled={pageIndex === totalPages - 1}
@@ -787,21 +786,19 @@ export default function Leaderboard({ batch, section }: { batch: string; section
                   <div className="bg-[#1b1430] rounded-lg p-1 border border-purple-600/30">
                     <button
                       onClick={() => setEligibilityFilter('all')}
-                      className={`px-2 py-2 rounded-md font-medium transition-all duration-200 text-xs hover:shadow-md ${
-                        eligibilityFilter === 'all'
+                      className={`px-2 py-2 rounded-md font-medium transition-all duration-200 text-xs hover:shadow-md ${eligibilityFilter === 'all'
                           ? 'bg-orange-200 text-black hover:bg-orange-300'
                           : 'bg-[#28203F] text-white hover:bg-[#3a2f5a]'
-                      }`}
+                        }`}
                     >
                       All
                     </button>
                     <button
                       onClick={() => setEligibilityFilter('only-eligible')}
-                      className={`px-2 py-2 rounded-md font-medium transition-all duration-200 text-xs hover:shadow-md ${
-                        eligibilityFilter === 'only-eligible'
+                      className={`px-2 py-2 rounded-md font-medium transition-all duration-200 text-xs hover:shadow-md ${eligibilityFilter === 'only-eligible'
                           ? 'bg-orange-200 text-black hover:bg-orange-300'
                           : 'bg-[#28203F] text-white hover:bg-[#3a2f5a]'
-                      }`}
+                        }`}
                     >
                       Only Eligible
                     </button>
@@ -811,21 +808,19 @@ export default function Leaderboard({ batch, section }: { batch: string; section
                   <div className="bg-[#1b1430] rounded-lg p-1 border border-purple-600/30">
                     <button
                       onClick={() => setAttendanceFilter('attended')}
-                      className={`px-2 py-2 rounded-md font-medium transition-all duration-200 text-xs hover:shadow-md ${
-                        attendanceFilter === 'attended'
+                      className={`px-2 py-2 rounded-md font-medium transition-all duration-200 text-xs hover:shadow-md ${attendanceFilter === 'attended'
                           ? 'bg-orange-200 text-black hover:bg-orange-300'
                           : 'bg-[#28203F] text-white hover:bg-[#3a2f5a]'
-                      }`}
+                        }`}
                     >
                       Attended ({attendanceCounts.attended})
                     </button>
                     <button
                       onClick={() => setAttendanceFilter('not-attended')}
-                      className={`px-2 py-2 rounded-md font-medium transition-all duration-200 text-xs hover:shadow-md ${
-                        attendanceFilter === 'not-attended'
+                      className={`px-2 py-2 rounded-md font-medium transition-all duration-200 text-xs hover:shadow-md ${attendanceFilter === 'not-attended'
                           ? 'bg-orange-200 text-black hover:bg-orange-300'
                           : 'bg-[#28203F] text-white hover:bg-[#3a2f5a]'
-                      }`}
+                        }`}
                     >
                       Not Attended ({attendanceCounts.notAttended})
                     </button>
@@ -872,7 +867,7 @@ export default function Leaderboard({ batch, section }: { batch: string; section
                 {searchQuery.trim() && (
                   <div className="text-center mb-4">
                     <p className="text-purple-200 text-sm">
-                      Found <span className="font-semibold text-purple-300">{filteredContestParticipants.length}</span> participant{filteredContestParticipants.length !== 1 ? 's' : ''} 
+                      Found <span className="font-semibold text-purple-300">{filteredContestParticipants.length}</span> participant{filteredContestParticipants.length !== 1 ? 's' : ''}
                       {filteredContestParticipants.length !== contestParticipants.length && (
                         <span> out of <span className="font-semibold text-purple-300">{contestParticipants.length}</span> total</span>
                       )}
@@ -888,7 +883,7 @@ export default function Leaderboard({ batch, section }: { batch: string; section
                         px-10 py-2
                         bg-gradient-to-br from-[#1b1430] via-[#1b1430] to-[#1b1430] 
                         rounded-lg shadow-md border border-purple-600/30 hover:border-purple-400/50 hover:shadow-lg hover:shadow-purple-500/10 transition-all duration-300 hover:scale-[1.01] hover:bg-gradient-to-br hover:from-[#2a1f4a] hover:via-[#2a1f4a] hover:to-[#2a1f4a]">
-                        
+
                         {/* Name and Icon */}
                         <div className="flex items-center gap-3 group cursor-pointer">
                           <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white group-hover:from-purple-400 group-hover:to-pink-400 transition-all duration-200">
@@ -926,13 +921,12 @@ export default function Leaderboard({ batch, section }: { batch: string; section
 
                         {/* Rating Change */}
                         <div className="text-center group cursor-pointer">
-                          <div className={`text-base font-medium transition-colors duration-200 ${
-                            (student.contestData?.userPerformance?.ratingChange || 0) > 0 
-                              ? 'text-green-400 group-hover:text-green-300' 
-                              : (student.contestData?.userPerformance?.ratingChange || 0) < 0 
-                                ? 'text-red-400 group-hover:text-red-300' 
+                          <div className={`text-base font-medium transition-colors duration-200 ${(student.contestData?.userPerformance?.ratingChange || 0) > 0
+                              ? 'text-green-400 group-hover:text-green-300'
+                              : (student.contestData?.userPerformance?.ratingChange || 0) < 0
+                                ? 'text-red-400 group-hover:text-red-300'
                                 : 'text-gray-400 group-hover:text-gray-300'
-                          }`}>
+                            }`}>
                             {(student.contestData?.userPerformance?.ratingChange || 0) > 0 ? '+' : ''}
                             {student.contestData?.userPerformance?.ratingChange || 0}
                           </div>
@@ -941,17 +935,16 @@ export default function Leaderboard({ batch, section }: { batch: string; section
 
                         {/* Trend */}
                         <div className="text-center group cursor-pointer">
-                          <div className={`text-base font-medium transition-colors duration-200 ${
-                            (student.contestData?.userPerformance?.ratingChange || 0) > 0 
-                              ? 'text-green-400 group-hover:text-green-300' 
-                              : (student.contestData?.userPerformance?.ratingChange || 0) < 0 
-                                ? 'text-red-400 group-hover:text-red-300' 
+                          <div className={`text-base font-medium transition-colors duration-200 ${(student.contestData?.userPerformance?.ratingChange || 0) > 0
+                              ? 'text-green-400 group-hover:text-green-300'
+                              : (student.contestData?.userPerformance?.ratingChange || 0) < 0
+                                ? 'text-red-400 group-hover:text-red-300'
                                 : 'text-gray-400 group-hover:text-gray-300'
-                          }`}>
-                            {(student.contestData?.userPerformance?.ratingChange || 0) > 0 
-                              ? '↗ Up' 
-                              : (student.contestData?.userPerformance?.ratingChange || 0) < 0 
-                                ? '↘ Down' 
+                            }`}>
+                            {(student.contestData?.userPerformance?.ratingChange || 0) > 0
+                              ? '↗ Up'
+                              : (student.contestData?.userPerformance?.ratingChange || 0) < 0
+                                ? '↘ Down'
                                 : '→ No Change'}
                           </div>
                           <div className="text-purple-200 text-xs mt-1 group-hover:text-purple-100 transition-colors duration-200">Trend</div>
@@ -977,16 +970,15 @@ export default function Leaderboard({ batch, section }: { batch: string; section
 
                         {/* Was Eligible */}
                         <div className="text-center group cursor-pointer">
-                          <div className={`text-base font-medium transition-colors duration-200 ${
-                            student.contestData?.userPerformance?.wasEligible 
-                              ? 'text-green-400 group-hover:text-green-300' 
+                          <div className={`text-base font-medium transition-colors duration-200 ${student.contestData?.userPerformance?.wasEligible
+                              ? 'text-green-400 group-hover:text-green-300'
                               : 'text-red-400 group-hover:text-red-300'
-                          }`}>
+                            }`}>
                             {student.contestData?.userPerformance?.wasEligible ? 'Yes' : 'No'}
                           </div>
                           <div className="text-purple-200 text-xs mt-1 group-hover:text-purple-100 transition-colors duration-200">Eligible</div>
                         </div>
-                        
+
                         {/* Empty columns to match dashboard layout */}
                         <div className="text-center"></div>
                         <div className="text-center"></div>

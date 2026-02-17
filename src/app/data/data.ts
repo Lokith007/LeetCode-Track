@@ -8,6 +8,7 @@ export const batchDisplayNames: Record<string, string> = {
 
 // Priority system for sorting (lower number = higher priority)
 export const batchPriorities: Record<string, number> = {
+  'SDE-II': 1,
   'batch24-28': 1,    // CSE-II - highest priority
   'batch23-27': 2,    // CSE-III - second priority
   'citarIII': 3,      // CSE-CITAR III - third priority

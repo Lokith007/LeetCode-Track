@@ -6,10 +6,10 @@ import { BarChart3, Trophy, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 type BatchCardProps = {
-  batch:  string
+  batch: string
   displayName?: string
-  secCount : number
- 
+  secCount: number
+
 }
 
 export default function BatchCard({ batch, displayName, secCount }: BatchCardProps) {

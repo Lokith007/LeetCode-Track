@@ -36,7 +36,7 @@ const LeaderboardPage = ({
   });
 
   const { data: batchData } = useQuery(GET_BATCH_INFO);
-  
+
   // Get the secCount for the current batch
   const currentBatchInfo = batchData?.allBatches?.find((b: any) => b.name === batch);
   const secCount = currentBatchInfo?.secCount || 1;
@@ -49,7 +49,7 @@ const LeaderboardPage = ({
           <div className="flex justify-between items-start mb-2">
             {/* Left Side - Navigation Buttons */}
             <QuickNavButtons currentBatch={batch} currentSection={section} secCount={secCount} />
-            
+
             {/* Right Side - Attendance Cards */}
             {/* Removed duplicate attendance cards - they're now shown in the Leaderboard component below */}
           </div>
@@ -80,10 +80,10 @@ const LeaderboardPage = ({
           )}
         </div>
       </div>
-          ) : platform === 'codechef' ? (
-      <CodeChefPage batch={batch} section={section}/>
+    ) : platform === 'codechef' ? (
+      <CodeChefPage batch={batch} section={section} />
     ) : platform === 'codeforces' ? (
-      <CodeForcesPage batch={batch} section={section}/>
+      <CodeForcesPage batch={batch} section={section} />
     ) : (
       <div className="min-h-screen bg-[#121212] text-gray-300 flex items-center justify-center">
         <div className="text-center">

@@ -111,12 +111,12 @@ export default function Leaderboard({ batch, section }: LeaderboardProps) {
     setFetchLoading(true);
     try {
       const { data } = await fetchMore({
-      variables: {
-        batch,
-        section: section === 'All' ? null : section,
+        variables: {
+          batch,
+          section: section === 'All' ? null : section,
           limit: 20,
-        cursor: nextCursor,
-      },
+          cursor: nextCursor,
+        },
       });
 
       const newStudents = data.paginatedStudents.students;
@@ -129,7 +129,7 @@ export default function Leaderboard({ batch, section }: LeaderboardProps) {
     } catch (error) {
       console.error('Error fetching more data:', error);
     } finally {
-        setFetchLoading(false);
+      setFetchLoading(false);
     }
   };
 
@@ -212,13 +212,13 @@ export default function Leaderboard({ batch, section }: LeaderboardProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white px-6 py-10">
       <div className="w-full max-w-7xl mx-auto space-y-6">
-        
+
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-purple-200 mb-2">CodeChef Leaderboard</h1>
           <p className="text-purple-300">Batch: {batch} • Section: {section}</p>
         </div>
-        
+
         {/* Nav bar */}
         <div className="flex justify-center gap-2 bg-slate-800/50 p-2 rounded-2xl backdrop-blur-sm">
           {[
@@ -228,11 +228,10 @@ export default function Leaderboard({ batch, section }: LeaderboardProps) {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key as 'profile' | 'contest')}
-              className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300 ${
-                activeTab === tab.key
+              className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300 ${activeTab === tab.key
                   ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/25'
                   : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
-              }`}
+                }`}
             >
               <span>{tab.icon}</span>
               {tab.label}
@@ -244,10 +243,10 @@ export default function Leaderboard({ batch, section }: LeaderboardProps) {
         {activeTab === 'profile' && (
           <div className="grid gap-4">
             {sortedStudents.map((student: Student, index: number) => {
-            const cc = student.codechefData;
-            return (
-              <div
-                key={student.id}
+              const cc = student.codechefData;
+              return (
+                <div
+                  key={student.id}
                   className="group bg-[#1b1430]/80 backdrop-blur-sm rounded-2xl p-6 border border-purple-600/30 hover:border-fuchsia-400/50 transition-all duration-300 hover:shadow-xl hover:shadow-fuchsia-500/10"
                 >
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
@@ -269,7 +268,7 @@ export default function Leaderboard({ batch, section }: LeaderboardProps) {
                     <div className="lg:col-span-3 text-center space-y-1">
                       <div className="text-pink-400 text-2xl font-extrabold">{cc?.currentRating?.toLocaleString() ?? '—'}</div>
                       <div className="text-xs text-slate-400 uppercase tracking-wide">Contest Rating</div>
-                </div>
+                    </div>
 
                     {/* Highest Rating */}
                     <div className="lg:col-span-2 text-center space-y-1">
@@ -287,11 +286,11 @@ export default function Leaderboard({ batch, section }: LeaderboardProps) {
                       <div className="text-xs text-slate-400 uppercase tracking-wide">Country</div>
                     </div>
                   </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* Contest Tab */}
         {activeTab === 'contest' && (
@@ -314,11 +313,10 @@ export default function Leaderboard({ batch, section }: LeaderboardProps) {
                   <button
                     key={key}
                     onClick={() => setAttendanceFilter(key)}
-                    className={`px-5 py-2 rounded-xl font-medium text-sm transition-all ${
-                      attendanceFilter === key
+                    className={`px-5 py-2 rounded-xl font-medium text-sm transition-all ${attendanceFilter === key
                         ? 'bg-[#fcd9b8] text-black'
                         : 'bg-slate-800/70 text-slate-200 hover:bg-slate-700/70'
-                    }`}
+                      }`}
                   >
                     {key === 'attended' ? 'Attended' : 'Not Attended'}
                   </button>
@@ -380,11 +378,10 @@ export default function Leaderboard({ batch, section }: LeaderboardProps) {
                 key={index}
                 onClick={() => !fetchLoading && handlePageChange(index)}
                 disabled={fetchLoading}
-                className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                  page === index
+                className={`px-4 py-2 rounded-lg font-medium transition-all ${page === index
                     ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/25'
                     : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600/50 hover:text-white'
-                } ${fetchLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  } ${fetchLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 {fetchLoading && page === index ? (
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -394,10 +391,10 @@ export default function Leaderboard({ batch, section }: LeaderboardProps) {
               </button>
             ))}
 
-      {nextCursor && (
-          <button
+            {nextCursor && (
+              <button
                 onClick={() => !fetchLoading && handlePageChange(page + 1)}
-            disabled={fetchLoading}
+                disabled={fetchLoading}
                 className="px-4 py-2 rounded-lg font-medium bg-slate-700/50 text-slate-300 hover:bg-slate-600/50 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {fetchLoading ? (
@@ -405,10 +402,10 @@ export default function Leaderboard({ batch, section }: LeaderboardProps) {
                 ) : (
                   'Next →'
                 )}
-          </button>
+              </button>
             )}
-        </div>
-      )}
+          </div>
+        )}
       </div>
     </div>
   );

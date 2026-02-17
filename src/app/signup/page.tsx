@@ -41,8 +41,8 @@ export default function SignUpPage() {
 
     return (
         <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#111] via-[#1a1a1a] to-[#111] px-4">
-            <form 
-                onSubmit={handleSignUp} 
+            <form
+                onSubmit={handleSignUp}
                 className="w-full max-w-md bg-[#1f1f1f]/90 backdrop-blur-md p-8 rounded-2xl shadow-2xl border border-[#333] space-y-6"
             >
                 <div className="text-center space-y-2">
@@ -73,9 +73,9 @@ export default function SignUpPage() {
                     />
                 </div>
 
-                <Button 
-                    type="submit" 
-                    className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 text-black font-semibold rounded-xl shadow-lg hover:scale-[1.02] transition-transform duration-200" 
+                <Button
+                    type="submit"
+                    className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 text-black font-semibold rounded-xl shadow-lg hover:scale-[1.02] transition-transform duration-200"
                     disabled={loading}
                 >
                     {loading ? "Signing Up..." : "Sign Up"}
@@ -83,8 +83,8 @@ export default function SignUpPage() {
 
                 <p className="text-center text-sm text-gray-500">
                     Already have an account?{" "}
-                    <span 
-                        onClick={() => router.push("/signin")} 
+                    <span
+                        onClick={() => router.push("/signin")}
                         className="text-yellow-400 hover:underline cursor-pointer"
                     >
                         Sign In
