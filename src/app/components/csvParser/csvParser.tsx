@@ -31,7 +31,7 @@ export default function CsvUploader({ batch }: { batch: string }) {
     return value
       .trim()
       .replace(/^"(.*)"$/g, '$1')
-      .replace(/[^a-zA-Z0-9\s_-]/g, '')
+      .replace(/[^a-zA-Z0-9\s._@-]/g, '')
       .trim();
   };
 
@@ -47,8 +47,8 @@ export default function CsvUploader({ batch }: { batch: string }) {
             realname: clean(row['realname']),
             rollnumber: clean(row['roll number']),
             section: clean(row['section']),
-            codechefUsername:clean(row['codechefusername']),
-            codeforcesUsername:clean(row['codeforcesusername'])
+            codechefUsername: clean(row['codechefusername']),
+            codeforcesUsername: clean(row['codeforcesusername'])
 
           }))
           .filter((s: Student) => s.username !== '');

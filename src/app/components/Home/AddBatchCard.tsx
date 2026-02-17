@@ -49,20 +49,19 @@ export default function AddBatchCard() {
     <>
       <Card
         onClick={() => setOpen(true)}
-        className="cursor-pointer flex items-center justify-center p-6 border-2 border-dashed border-orange-300 bg-[#1e1e1e] rounded-2xl shadow-md transition-all duration-300 hover:shadow-lg hover:scale-105 hover:border-orange-300 hover:ring-2 hover:ring-orange-200 group"
+        className="cursor-pointer transition-all duration-300 p-4 bg-[#1e1e1e] border-2 border-dashed border-orange-300 shadow-md rounded-2xl hover:shadow-lg hover:scale-105 hover:border-orange-300 hover:ring-2 hover:ring-orange-200 group h-32 w-full"
       >
-        <CardContent className="flex flex-col items-center text-center">
-          <Button
-            variant="outline"
-            size="icon"
-            className="bg-gray-900 border border-orange-400 text-orange-300 rounded-full p-3 shadow-sm group-hover:shadow-md transition-all duration-300 mb-3 group-hover:bg-gray-800 group-hover:text-orange-200"
-          >
-            <Plus className="h-8 w-8 transition-transform group-hover:rotate-90 duration-300" />
-          </Button>
-          <p className="text-gray-200 font-bold text-lg group-hover:text-orange-200 transition-colors">
+        <CardContent className="relative">
+          <div className="flex items-start justify-between mb-3">
+            <div className="bg-orange-400 rounded-lg p-2 shadow-sm group-hover:scale-110 transition-transform duration-300">
+              <Plus className="h-5 w-5 text-white" />
+            </div>
+            <div className="w-5 h-5"></div>
+          </div>
+          <h2 className="text-xl font-bold text-gray-200 group-hover:text-orange-200 transition-colors mb-2">
             Add a Batch
-          </p>
-          <p className="text-gray-300 text-sm mt-1 opacity-70 group-hover:opacity-90 transition-opacity">
+          </h2>
+          <p className="text-gray-300 text-sm opacity-70 group-hover:opacity-90 transition-opacity">
             Create new batch
           </p>
         </CardContent>

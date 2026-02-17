@@ -6,10 +6,20 @@ import Leaderboard from '../../../../components/LeaderBoard/Leaderboard';
 import ContestLeaderboard from '../../../../components/LeaderBoard/ContestLeaderboard';
 import CodeChefPage from '@/app/components/LeaderBoard/CodeChefPage';
 import CodeForcesPage from '@/app/components/LeaderBoard/CodeForcesPage';
+import QuickNavButtons from '@/app/components/QuickNavButtons';
 
 const GET_ALL_CONTESTS = gql`
   query GetAllContests($batch: String!) {
     allContests(batch: $batch)
+  }
+`;
+
+const GET_BATCH_INFO = gql`
+  query GetBatchInfo($batch: String!) {
+    allBatches {
+      name
+      secCount
+    }
   }
 `;
 
@@ -25,9 +35,25 @@ const LeaderboardPage = ({
     variables: { batch },
   });
 
+  const { data: batchData } = useQuery(GET_BATCH_INFO);
+
+  // Get the secCount for the current batch
+  const currentBatchInfo = batchData?.allBatches?.find((b: any) => b.name === batch);
+  const secCount = currentBatchInfo?.secCount || 1;
+
   return (
     platform === 'leetcode' ? (
-      <div className="min-h-screen bg-[#121212] text-gray-300 px-6 py-10 space-y-10">
+      <div className="min-h-screen bg-[#121212] text-gray-300 px-6 py-10 space-y-4">
+        {/* Quick Navigation and Attendance Cards */}
+        <div className="w-full max-w-7xl mx-auto">
+          <div className="flex justify-between items-start mb-2">
+            {/* Left Side - Navigation Buttons */}
+            <QuickNavButtons currentBatch={batch} currentSection={section} secCount={secCount} />
+
+            {/* Right Side - Attendance Cards */}
+            {/* Removed duplicate attendance cards - they're now shown in the Leaderboard component below */}
+          </div>
+        </div>
         {/* Main Content */}
         <div className="w-full max-w-7xl mx-auto">
           {view === 'dashboard' ? (
@@ -55,13 +81,9 @@ const LeaderboardPage = ({
         </div>
       </div>
     ) : platform === 'codechef' ? (
-      <>
-        <CodeChefPage batch={batch} section={section}/>
-      </>
+      <CodeChefPage batch={batch} section={section} />
     ) : platform === 'codeforces' ? (
-      <>
-        <CodeForcesPage batch={batch} section={section}/>
-      </>
+      <CodeForcesPage batch={batch} section={section} />
     ) : (
       <div className="min-h-screen bg-[#121212] text-gray-300 flex items-center justify-center">
         <div className="text-center">
