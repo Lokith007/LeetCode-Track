@@ -708,8 +708,8 @@ export default function Leaderboard({ batch, section }: { batch: string; section
                         key={pageNum}
                         onClick={() => setPageIndex(pageNum - 1)}
                         className={`w-10 h-10 rounded-lg text-sm font-medium transition-colors ${pageNum === pageIndex + 1
-                            ? 'bg-purple-600 text-white'
-                            : 'bg-[#1b1430] border border-purple-600/30 text-purple-300 hover:bg-purple-600/20 hover:border-purple-400/50'
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-[#1b1430] border border-purple-600/30 text-purple-300 hover:bg-purple-600/20 hover:border-purple-400/50'
                           }`}
                       >
                         {pageNum}
@@ -787,8 +787,8 @@ export default function Leaderboard({ batch, section }: { batch: string; section
                     <button
                       onClick={() => setEligibilityFilter('all')}
                       className={`px-2 py-2 rounded-md font-medium transition-all duration-200 text-xs hover:shadow-md ${eligibilityFilter === 'all'
-                          ? 'bg-orange-200 text-black hover:bg-orange-300'
-                          : 'bg-[#28203F] text-white hover:bg-[#3a2f5a]'
+                        ? 'bg-orange-200 text-black hover:bg-orange-300'
+                        : 'bg-[#28203F] text-white hover:bg-[#3a2f5a]'
                         }`}
                     >
                       All
@@ -796,8 +796,8 @@ export default function Leaderboard({ batch, section }: { batch: string; section
                     <button
                       onClick={() => setEligibilityFilter('only-eligible')}
                       className={`px-2 py-2 rounded-md font-medium transition-all duration-200 text-xs hover:shadow-md ${eligibilityFilter === 'only-eligible'
-                          ? 'bg-orange-200 text-black hover:bg-orange-300'
-                          : 'bg-[#28203F] text-white hover:bg-[#3a2f5a]'
+                        ? 'bg-orange-200 text-black hover:bg-orange-300'
+                        : 'bg-[#28203F] text-white hover:bg-[#3a2f5a]'
                         }`}
                     >
                       Only Eligible
@@ -809,8 +809,8 @@ export default function Leaderboard({ batch, section }: { batch: string; section
                     <button
                       onClick={() => setAttendanceFilter('attended')}
                       className={`px-2 py-2 rounded-md font-medium transition-all duration-200 text-xs hover:shadow-md ${attendanceFilter === 'attended'
-                          ? 'bg-orange-200 text-black hover:bg-orange-300'
-                          : 'bg-[#28203F] text-white hover:bg-[#3a2f5a]'
+                        ? 'bg-orange-200 text-black hover:bg-orange-300'
+                        : 'bg-[#28203F] text-white hover:bg-[#3a2f5a]'
                         }`}
                     >
                       Attended ({attendanceCounts.attended})
@@ -818,8 +818,8 @@ export default function Leaderboard({ batch, section }: { batch: string; section
                     <button
                       onClick={() => setAttendanceFilter('not-attended')}
                       className={`px-2 py-2 rounded-md font-medium transition-all duration-200 text-xs hover:shadow-md ${attendanceFilter === 'not-attended'
-                          ? 'bg-orange-200 text-black hover:bg-orange-300'
-                          : 'bg-[#28203F] text-white hover:bg-[#3a2f5a]'
+                        ? 'bg-orange-200 text-black hover:bg-orange-300'
+                        : 'bg-[#28203F] text-white hover:bg-[#3a2f5a]'
                         }`}
                     >
                       Not Attended ({attendanceCounts.notAttended})
@@ -922,10 +922,10 @@ export default function Leaderboard({ batch, section }: { batch: string; section
                         {/* Rating Change */}
                         <div className="text-center group cursor-pointer">
                           <div className={`text-base font-medium transition-colors duration-200 ${(student.contestData?.userPerformance?.ratingChange || 0) > 0
-                              ? 'text-green-400 group-hover:text-green-300'
-                              : (student.contestData?.userPerformance?.ratingChange || 0) < 0
-                                ? 'text-red-400 group-hover:text-red-300'
-                                : 'text-gray-400 group-hover:text-gray-300'
+                            ? 'text-green-400 group-hover:text-green-300'
+                            : (student.contestData?.userPerformance?.ratingChange || 0) < 0
+                              ? 'text-red-400 group-hover:text-red-300'
+                              : 'text-gray-400 group-hover:text-gray-300'
                             }`}>
                             {(student.contestData?.userPerformance?.ratingChange || 0) > 0 ? '+' : ''}
                             {student.contestData?.userPerformance?.ratingChange || 0}
@@ -936,10 +936,10 @@ export default function Leaderboard({ batch, section }: { batch: string; section
                         {/* Trend */}
                         <div className="text-center group cursor-pointer">
                           <div className={`text-base font-medium transition-colors duration-200 ${(student.contestData?.userPerformance?.ratingChange || 0) > 0
-                              ? 'text-green-400 group-hover:text-green-300'
-                              : (student.contestData?.userPerformance?.ratingChange || 0) < 0
-                                ? 'text-red-400 group-hover:text-red-300'
-                                : 'text-gray-400 group-hover:text-gray-300'
+                            ? 'text-green-400 group-hover:text-green-300'
+                            : (student.contestData?.userPerformance?.ratingChange || 0) < 0
+                              ? 'text-red-400 group-hover:text-red-300'
+                              : 'text-gray-400 group-hover:text-gray-300'
                             }`}>
                             {(student.contestData?.userPerformance?.ratingChange || 0) > 0
                               ? '↗ Up'
@@ -971,8 +971,8 @@ export default function Leaderboard({ batch, section }: { batch: string; section
                         {/* Was Eligible */}
                         <div className="text-center group cursor-pointer">
                           <div className={`text-base font-medium transition-colors duration-200 ${student.contestData?.userPerformance?.wasEligible
-                              ? 'text-green-400 group-hover:text-green-300'
-                              : 'text-red-400 group-hover:text-red-300'
+                            ? 'text-green-400 group-hover:text-green-300'
+                            : 'text-red-400 group-hover:text-red-300'
                             }`}>
                             {student.contestData?.userPerformance?.wasEligible ? 'Yes' : 'No'}
                           </div>

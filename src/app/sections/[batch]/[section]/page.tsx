@@ -17,14 +17,13 @@ const GET_BATCH_INFO = gql`
   }
 `;
 
-const LeetCodeSections = ({
+const Sections = ({
   params,
 }: {
   params: Promise<{ batch: string; section: string }>;
 }) => {
   const { batch, section } = use(params);
   const router = useRouter(); // ✅ hook from App Router
-
   const { data: batchData } = useQuery(GET_BATCH_INFO);
 
   // Get the actual secCount for the current batch
@@ -132,4 +131,4 @@ const LeetCodeSections = ({
   );
 };
 
-export default LeetCodeSections;
+export default Sections;

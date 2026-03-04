@@ -166,16 +166,6 @@ export default function HomePage() {
         })()}
       </div>
 
-      <a
-        href="https://bot-leetcode.onrender.com/"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="fixed bottom-6 right-6 z-50"
-      >
-        <button className="bg-orange-300 text-white px-4 py-3 rounded-full shadow-lg hover:bg-orange-600 transition-all flex items-center gap-2 text-sm font-semibold">
-          🧠 Try AI Assistant
-        </button>
-      </a>
     </main>
   )
 }

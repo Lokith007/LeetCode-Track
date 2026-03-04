@@ -37,34 +37,29 @@ const Page = () => {
         <QuickNavButtons currentBatch={batch} secCount={secCount} />
       </div>
 
-      {/* Platform Cards */}
+      {/* Platform Dashboard Cards */}
       <div className="w-full max-w-7xl mx-auto">
-        <div className="flex items-center justify-center gap-8 flex-wrap max-w-4xl mx-auto">
-          {/* LeetCode Card */}
-          <div
-            onClick={() => handleClick("leetcode")}
-            className="group cursor-pointer p-6 w-48 h-40 rounded-2xl bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200 shadow-lg flex flex-col items-center justify-center hover:scale-105 hover:shadow-xl hover:border-orange-300 transition-all duration-200"
-          >
-            <span className="text-xl font-bold text-orange-700 mb-2">LeetCode</span>
-            <p className="text-sm text-orange-600 text-center">Practice & Compete</p>
-          </div>
-
-          {/* CodeChef Card */}
-          <div
-            onClick={() => handleClick("codechef")}
-            className="group cursor-pointer p-6 w-48 h-40 rounded-2xl bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 shadow-lg flex flex-col items-center justify-center hover:scale-105 hover:shadow-xl hover:border-purple-300 transition-all duration-200"
-          >
-            <span className="text-xl font-bold text-purple-700 mb-2">CodeChef</span>
-            <p className="text-sm text-purple-600 text-center">Sharpen Skills</p>
-          </div>
-
+        <div className="flex flex-col items-center mb-10">
+          <h2 className="text-2xl font-bold text-white mb-2">Platform Dashboards</h2>
+          <p className="text-gray-400">View overall rankings and statistics</p>
+        </div>
+        <div className="flex items-center justify-center gap-8 flex-wrap max-w-5xl mx-auto">
           {/* CodeForces Card */}
           <div
             onClick={() => handleClick("codeforces")}
-            className="group cursor-pointer p-6 w-48 h-40 rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 shadow-lg flex flex-col items-center justify-center hover:scale-105 hover:shadow-xl hover:border-blue-300 transition-all duration-200"
+            className="group cursor-pointer p-6 w-56 h-44 rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 shadow-lg flex flex-col items-center justify-center hover:scale-105 hover:shadow-xl hover:border-blue-300 transition-all duration-200"
           >
-            <span className="text-xl font-bold text-blue-700 mb-2">CodeForces</span>
-            <p className="text-sm text-blue-600 text-center">Compete & Excel</p>
+            <span className="text-2xl font-bold text-blue-700 mb-2">CodeForces</span>
+            <p className="text-sm text-blue-600 text-center font-medium">Competitive Dashboard</p>
+          </div>
+
+          {/* Weekly Contest Card */}
+          <div
+            onClick={() => router.push(`/weekly-contest/${batch}/${section}/codeforces`)}
+            className="group cursor-pointer p-6 w-56 h-44 rounded-2xl bg-gradient-to-br from-red-50 to-red-100 border border-red-200 shadow-lg flex flex-col items-center justify-center hover:scale-105 hover:shadow-xl hover:border-red-300 transition-all duration-200"
+          >
+            <span className="text-2xl font-bold text-red-700 mb-2">Weekly Contest</span>
+            <p className="text-sm text-red-600 text-center font-medium">Codeforces Weekly</p>
           </div>
         </div>
       </div>

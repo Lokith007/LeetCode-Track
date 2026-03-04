@@ -152,7 +152,7 @@ export default function BatchTables() {
                 <th className={thClass}>Rank</th>
                 <th className={thClass}>Student Name</th>
                 <th className={thClass}>Department/Year</th>
-                <th className={thClass}>LeetCode ID</th>
+                <th className={thClass}>Roll Number</th>
                 <th className={thClass}>Problems Solved</th>
                 <th className={thClass}>Global Ranking</th>
               </tr>

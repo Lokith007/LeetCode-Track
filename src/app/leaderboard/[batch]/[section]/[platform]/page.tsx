@@ -42,47 +42,7 @@ const LeaderboardPage = ({
   const secCount = currentBatchInfo?.secCount || 1;
 
   return (
-    platform === 'leetcode' ? (
-      <div className="min-h-screen bg-[#121212] text-gray-300 px-6 py-10 space-y-4">
-        {/* Quick Navigation and Attendance Cards */}
-        <div className="w-full max-w-7xl mx-auto">
-          <div className="flex justify-between items-start mb-2">
-            {/* Left Side - Navigation Buttons */}
-            <QuickNavButtons currentBatch={batch} currentSection={section} secCount={secCount} />
-
-            {/* Right Side - Attendance Cards */}
-            {/* Removed duplicate attendance cards - they're now shown in the Leaderboard component below */}
-          </div>
-        </div>
-        {/* Main Content */}
-        <div className="w-full max-w-7xl mx-auto">
-          {view === 'dashboard' ? (
-            <Leaderboard
-              batch={batch}
-              section={section}
-              setView={setView}
-            />
-          ) : loading ? (
-            <div className="mt-6 flex justify-center">
-              <div className="w-8 h-8 border-4 border-orange-400 border-t-transparent rounded-full animate-spin"></div>
-            </div>
-          ) : error ? (
-            <p className="text-center text-red-500 font-medium">
-              Error fetching contests.
-            </p>
-          ) : (
-            <ContestLeaderboard
-              batch={batch}
-              section={section}
-              contests={data.allContests}
-              setView={setView}
-            />
-          )}
-        </div>
-      </div>
-    ) : platform === 'codechef' ? (
-      <CodeChefPage batch={batch} section={section} />
-    ) : platform === 'codeforces' ? (
+    platform === 'codeforces' ? (
       <CodeForcesPage batch={batch} section={section} />
     ) : (
       <div className="min-h-screen bg-[#121212] text-gray-300 flex items-center justify-center">
