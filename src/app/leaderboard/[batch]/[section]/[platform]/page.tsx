@@ -6,6 +6,7 @@ import Leaderboard from '../../../../components/LeaderBoard/Leaderboard';
 import ContestLeaderboard from '../../../../components/LeaderBoard/ContestLeaderboard';
 import CodeChefPage from '@/app/components/LeaderBoard/CodeChefPage';
 import CodeForcesPage from '@/app/components/LeaderBoard/CodeForcesPage';
+import CFWeeklyLeaderboard from '@/app/components/LeaderBoard/CFWeeklyLeaderboard';
 import QuickNavButtons from '@/app/components/QuickNavButtons';
 
 const GET_ALL_CONTESTS = gql`
@@ -84,6 +85,15 @@ const LeaderboardPage = ({
       <CodeChefPage batch={batch} section={section} />
     ) : platform === 'codeforces' ? (
       <CodeForcesPage batch={batch} section={section} />
+    ) : platform === 'codeforces-weekly' ? (
+      <div className="min-h-screen bg-[#0f0f0f] text-gray-300 px-6 py-10 space-y-8">
+        <div className="w-full max-w-7xl mx-auto">
+          <QuickNavButtons currentBatch={batch} currentSection={section} secCount={secCount} />
+        </div>
+        <div className="w-full max-w-7xl mx-auto">
+          <CFWeeklyLeaderboard batch={batch} section={section} />
+        </div>
+      </div>
     ) : (
       <div className="min-h-screen bg-[#121212] text-gray-300 flex items-center justify-center">
         <div className="text-center">

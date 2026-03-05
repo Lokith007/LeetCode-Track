@@ -66,6 +66,43 @@ const Page = () => {
             <span className="text-xl font-bold text-blue-700 mb-2">CodeForces</span>
             <p className="text-sm text-blue-600 text-center">Compete & Excel</p>
           </div>
+
+          <div
+            onClick={() => handleClick("hackerrank")}
+            className="group cursor-pointer p-6 w-48 h-40 rounded-2xl bg-gradient-to-br from-green-50 to-green-100 border border-green-200 shadow-lg flex flex-col items-center justify-center hover:scale-105 hover:shadow-xl hover:border-green-300 transition-all duration-200"
+          >
+            <span className="text-xl font-bold text-green-700 mb-2">HackerRank</span>
+            <p className="text-sm text-green-600 text-center">Solve & Learn</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Weekly Tournaments */}
+      <div className="w-full max-w-7xl mx-auto mt-20 mb-8">
+        <div className="flex flex-col items-center justify-center mb-10">
+          <div className="w-12 h-1 bg-orange-500 rounded-full mb-6"></div>
+          <h2 className="text-3xl font-bold text-gray-100 mb-2">Weekly Tournaments</h2>
+          <p className="text-sm text-gray-400">Track real-time performance in recent weekly contests</p>
+        </div>
+
+        <div className="flex items-center justify-center gap-6 flex-wrap max-w-6xl mx-auto">
+          {/* CodeForces Weekly */}
+          <div
+            onClick={() => handleClick("codeforces-weekly")}
+            className="group relative cursor-pointer p-6 w-[280px] h-32 rounded-2xl bg-[#0f0f0f]/80 backdrop-blur-sm border border-blue-500/20 shadow-lg flex flex-col items-start justify-center hover:border-blue-500/60 transition-all duration-300 overflow-hidden"
+          >
+            <div className="absolute -right-4 top-4 opacity-5 group-hover:opacity-[0.15] transition-opacity flex gap-1">
+              {/* Decorative bar shape */}
+              <div className="w-6 h-24 bg-blue-500 rounded-sm"></div>
+              <div className="w-6 h-16 bg-blue-500 rounded-sm mt-8"></div>
+              <div className="w-6 h-20 bg-blue-500 rounded-sm mt-4"></div>
+            </div>
+            <span className="text-xs font-bold tracking-widest text-blue-500 mb-2 z-10">CODEFORCES</span>
+            <span className="text-xl font-bold text-white mb-auto z-10">Weekly Clash</span>
+            <span className="text-xs font-medium text-blue-500 flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity mt-3 z-10">
+              View Leaderboard <span className="ml-1 text-lg leading-none">→</span>
+            </span>
+          </div>
         </div>
       </div>
     </div>
