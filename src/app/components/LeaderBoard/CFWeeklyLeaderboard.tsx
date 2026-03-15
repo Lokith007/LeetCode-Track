@@ -48,7 +48,9 @@ export default function CFWeeklyLeaderboard({ batch, section }: CFWeeklyLeaderbo
     const [isNewContest, setIsNewContest] = useState(false);
     const loadingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const { data: pastContestsData, loading: loadingPast } = useQuery(GET_PAST_CF_CONTESTS);
+    const { data: pastContestsData, loading: loadingPast } = useQuery(GET_PAST_CF_CONTESTS, {
+        fetchPolicy: 'network-only', // Always fetch fresh — new contests won't appear if we serve from cache
+    });
 
     const [getLeaderboard, { data: leaderboardData, loading: loadingLeaderboard, error }] = useLazyQuery(GET_CF_LEADERBOARD);
 
