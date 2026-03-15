@@ -19,7 +19,7 @@ Make sure you have:
 
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { gql, useQuery } from '@apollo/client';
 import * as XLSX from 'xlsx';
 import { getBatchDisplayName } from '@/app/data/data';

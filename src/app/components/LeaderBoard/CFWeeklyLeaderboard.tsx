@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { gql, useQuery, useLazyQuery } from '@apollo/client';
-import { Trophy, Users, Star, Hash, Plus, ChevronRight, Search, Layout } from 'lucide-react';
+import { Trophy, Users, Plus, ChevronRight, Search, Layout, Clock } from 'lucide-react';
 
 const GET_CF_LEADERBOARD = gql`
   query GetCFLeaderboard($batch: String!, $contestId: Int!) {
@@ -45,6 +45,8 @@ export default function CFWeeklyLeaderboard({ batch, section }: CFWeeklyLeaderbo
     const [newContestId, setNewContestId] = useState<string>('');
     const [viewMode, setViewMode] = useState<'participants' | 'nonParticipants'>('participants');
     const [searchQuery, setSearchQuery] = useState('');
+    const [isNewContest, setIsNewContest] = useState(false);
+    const loadingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const { data: pastContestsData, loading: loadingPast } = useQuery(GET_PAST_CF_CONTESTS);
 
@@ -54,19 +56,42 @@ export default function CFWeeklyLeaderboard({ batch, section }: CFWeeklyLeaderbo
 
     const handleFetchLeaderboard = useCallback((id: number) => {
         setSelectedContestId(id);
+        setIsNewContest(false);
+        // Clear any previous timeout before starting a new fetch
+        if (loadingTimerRef.current) clearTimeout(loadingTimerRef.current);
         getLeaderboard({ variables: { batch, contestId: id } });
     }, [batch, getLeaderboard]);
+
+    // If loading takes more than 5 seconds, the backend is still processing — show "come back later"
+    useEffect(() => {
+        if (loadingTimerRef.current) clearTimeout(loadingTimerRef.current);
+        if (loadingLeaderboard) {
+            loadingTimerRef.current = setTimeout(() => {
+                setIsNewContest(true);
+            }, 5000);
+        }
+        return () => {
+            if (loadingTimerRef.current) clearTimeout(loadingTimerRef.current);
+        };
+    }, [loadingLeaderboard]);
 
     useEffect(() => {
         if (pastContests.length > 0 && !selectedContestId) {
             handleFetchLeaderboard(pastContests[0].contestId);
         }
-    }, [pastContests, selectedContestId, handleFetchLeaderboard]); // Changed from useMemo to useEffect
+    }, [pastContests, selectedContestId, handleFetchLeaderboard]);
 
     const handleAddNewContest = () => {
         const id = parseInt(newContestId);
         if (!isNaN(id)) {
-            handleFetchLeaderboard(id);
+            const alreadyKnown = pastContests.some((c: any) => c.contestId === id);
+            if (alreadyKnown) {
+                handleFetchLeaderboard(id);
+            } else {
+                // New contest: tell user to come back later instead of buffering
+                setSelectedContestId(id);
+                setIsNewContest(true);
+            }
             setNewContestId('');
         }
     };
@@ -144,6 +169,21 @@ export default function CFWeeklyLeaderboard({ batch, section }: CFWeeklyLeaderbo
                     <Layout className="w-16 h-16 text-gray-600 mb-4" />
                     <h3 className="text-xl font-medium text-gray-400">Select or enter a contest to view results</h3>
                     <p className="text-gray-500 mt-2">Historical contest data will appear here</p>
+                </div>
+            ) : isNewContest ? (
+                <div className="flex flex-col items-center justify-center py-20 bg-[#1a1a1a]/30 rounded-3xl border border-dashed border-yellow-500/20">
+                    <div className="w-16 h-16 rounded-full bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center mb-5">
+                        <Clock className="w-8 h-8 text-yellow-400" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-yellow-300">Contest #{selectedContestId} is being processed</h3>
+                    <p className="text-gray-400 mt-2 text-sm max-w-md text-center">
+                        This contest&apos;s results are still being fetched and computed by the backend.
+                        Please check back in about an hour.
+                    </p>
+                    <div className="mt-6 flex items-center gap-2 text-xs text-yellow-500/60 bg-yellow-500/5 px-4 py-2 rounded-full border border-yellow-500/10">
+                        <Clock className="w-3 h-3" />
+                        Results are usually ready within ~1 hour
+                    </div>
                 </div>
             ) : loadingLeaderboard ? (
                 <div className="flex flex-col items-center justify-center py-20">
